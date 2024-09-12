@@ -638,19 +638,18 @@ class PedidoController extends Controller
             $pedido->update($validatedData);
             Cache::tags(['pedidos'])->flush();
 
-            // Ajustar os preços no pivot para float
+            // Ajustar os preços no pivot e preco_total para float
+            $pedido->preco_total = (float) $pedido->preco_total;
             $pedido->produtos->each(function ($produto) {
                 $produto->pivot->preco = (float) $produto->pivot->preco;
             });
-
-            $pedido->preco_total = (float) $pedido->preco_total;
 
             // Preparar resposta
             $response = [
                 'sucesso' => true,
                 'mensagem_erro' => null,
                 'dados' => [
-                    'pedido' => $pedido->load('produtos'),
+                    'pedido' => $pedido,
                 ],
             ];
 
