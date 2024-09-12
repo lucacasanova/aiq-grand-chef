@@ -49,7 +49,8 @@ Certifique-se de ter o Docker e o Docker Compose instalados em sua máquina.
 
 Após seguir os passos de configuração, a aplicação estará disponível em `http://localhost:8000`.
 
-## Aah, esse backend utiliza websocket para manter o frontend sempre atualizado. Acesse [http://localhost:8000/](http://localhost:8000/) em uma segunda aba para ver as atualizações conforme os testes 💜
+## Aah, esse backend utiliza websocket para manter o frontend sempre atualizado.
+## Acesse [http://localhost:8000/](http://localhost:8000/) em uma segunda aba para ver as atualizações conforme os testes 💜
 
 ## Documentação da API
 
