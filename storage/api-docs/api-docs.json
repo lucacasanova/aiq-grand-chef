@@ -1,0 +1,2615 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Aiq.fome - Grand Chef",
+        "description": "API Documentation",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "http://localhost:8000",
+            "description": "Local server"
+        }
+    ],
+    "paths": {
+        "/cardapio": {
+            "get": {
+                "tags": [
+                    "Categorias"
+                ],
+                "summary": "Listar categorias",
+                "description": "Retorna uma lista de categorias com seus produtos associados. Os resultados são armazenados em cache por 60 segundos.",
+                "operationId": "listarCategorias",
+                "parameters": [
+                    {
+                        "name": "itens_por_pagina",
+                        "in": "query",
+                        "description": "Número de itens por página",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "ordenar_por",
+                        "in": "query",
+                        "description": "Coluna para ordenação",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "ordem",
+                        "in": "query",
+                        "description": "Direção da ordenação",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "pagina",
+                        "in": "query",
+                        "description": "Número da página",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Sucesso",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucesso": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "mensagem_erro": {
+                                            "type": "null",
+                                            "example": null,
+                                            "nullable": true
+                                        },
+                                        "dados": {
+                                            "properties": {
+                                                "categorias": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "nome": {
+                                                                "type": "string",
+                                                                "example": "Pizza"
+                                                            },
+                                                            "created_at": {
+                                                                "type": "string",
+                                                                "format": "date-time",
+                                                                "example": "2024-09-11T05:58:09.000000Z"
+                                                            },
+                                                            "updated_at": {
+                                                                "type": "string",
+                                                                "format": "date-time",
+                                                                "example": "2024-09-11T05:58:09.000000Z"
+                                                            },
+                                                            "produtos": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "properties": {
+                                                                        "id": {
+                                                                            "type": "integer",
+                                                                            "example": 1
+                                                                        },
+                                                                        "categoria_id": {
+                                                                            "type": "integer",
+                                                                            "example": 1
+                                                                        },
+                                                                        "nome": {
+                                                                            "type": "string",
+                                                                            "example": "Pizza de Strogonoff 😋"
+                                                                        },
+                                                                        "preco": {
+                                                                            "type": "number",
+                                                                            "format": "float",
+                                                                            "example": 47.77
+                                                                        },
+                                                                        "created_at": {
+                                                                            "type": "string",
+                                                                            "format": "date-time",
+                                                                            "example": "2024-09-11T05:58:09.000000Z"
+                                                                        },
+                                                                        "updated_at": {
+                                                                            "type": "string",
+                                                                            "format": "date-time",
+                                                                            "example": "2024-09-11T05:58:09.000000Z"
+                                                                        }
+                                                                    },
+                                                                    "type": "object"
+                                                                }
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "ultima_pagina": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "total_itens": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "filtro": {
+                                                    "properties": {
+                                                        "itens_por_pagina": {
+                                                            "type": "integer",
+                                                            "example": 10
+                                                        },
+                                                        "ordenar_por": {
+                                                            "type": "string",
+                                                            "example": "id"
+                                                        },
+                                                        "ordem": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "asc",
+                                                                "desc"
+                                                            ]
+                                                        },
+                                                        "pagina": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor + log interno",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucesso": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "mensagem_erro": {
+                                            "type": "string",
+                                            "example": "Algo deu errado. Tente novamente mais tarde."
+                                        },
+                                        "dados": {
+                                            "type": "null",
+                                            "example": null,
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/categorias": {
+            "post": {
+                "tags": [
+                    "Categorias"
+                ],
+                "summary": "Criar nova categoria",
+                "description": "Cria uma nova categoria. O cache de categorias é limpo após a criação.",
+                "operationId": "criarCategoria",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "nome": {
+                                        "type": "string",
+                                        "example": "Pizza"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Categoria criada com sucesso",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucesso": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "mensagem_erro": {
+                                            "type": "null",
+                                            "example": null,
+                                            "nullable": true
+                                        },
+                                        "dados": {
+                                            "properties": {
+                                                "categoria": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "nome": {
+                                                            "type": "string",
+                                                            "example": "Pizza"
+                                                        },
+                                                        "created_at": {
+                                                            "type": "string",
+                                                            "format": "date-time",
+                                                            "example": "2024-09-11T05:58:09.000000Z"
+                                                        },
+                                                        "updated_at": {
+                                                            "type": "string",
+                                                            "format": "date-time",
+                                                            "example": "2024-09-11T05:58:09.000000Z"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Erro de validação",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucesso": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "mensagem_erro": {
+                                            "type": "string",
+                                            "oneOf": [
+                                                {
+                                                    "type": "string",
+                                                    "example": "O campo nome é obrigatório."
+                                                },
+                                                {
+                                                    "type": "string",
+                                                    "example": "O campo nome deve ser uma string."
+                                                },
+                                                {
+                                                    "type": "string",
+                                                    "example": "O campo nome não pode ter mais de 255 caracteres."
+                                                },
+                                                {
+                                                    "type": "string",
+                                                    "example": "O nome da categoria já existe."
+                                                }
+                                            ]
+                                        },
+                                        "dados": {
+                                            "type": "null",
+                                            "example": null,
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor + log interno",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucesso": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "mensagem_erro": {
+                                            "type": "string",
+                                            "example": "Algo deu errado. Tente novamente mais tarde."
+                                        },
+                                        "dados": {
+                                            "type": "null",
+                                            "example": null,
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/categorias/{id}": {
+            "get": {
+                "tags": [
+                    "Categorias"
+                ],
+                "summary": "Mostrar categoria",
+                "description": "Retorna uma categoria específica com seus produtos associados. O resultado é armazenado em cache por 60 segundos.",
+                "operationId": "visualizarCategoria",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID da categoria",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Sucesso",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucesso": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "mensagem_erro": {
+                                            "type": "string",
+                                            "example": null,
+                                            "nullable": true
+                                        },
+                                        "dados": {
+                                            "properties": {
+                                                "categoria": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "nome": {
+                                                            "type": "string",
+                                                            "example": "Pizza"
+                                                        },
+                                                        "created_at": {
+                                                            "type": "string",
+                                                            "format": "date-time",
+                                                            "example": "2024-09-11T05:58:09.000000Z"
+                                                        },
+                                                        "updated_at": {
+                                                            "type": "string",
+                                                            "format": "date-time",
+                                                            "example": "2024-09-11T05:58:09.000000Z"
+                                                        },
+                                                        "produtos": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "integer",
+                                                                        "example": 1
+                                                                    },
+                                                                    "categoria_id": {
+                                                                        "type": "integer",
+                                                                        "example": 1
+                                                                    },
+                                                                    "nome": {
+                                                                        "type": "string",
+                                                                        "example": "Pizza de Strogonoff 😋"
+                                                                    },
+                                                                    "preco": {
+                                                                        "type": "number",
+                                                                        "format": "float",
+                                                                        "example": 47.77
+                                                                    },
+                                                                    "created_at": {
+                                                                        "type": "string",
+                                                                        "format": "date-time",
+                                                                        "example": "2024-09-11T05:58:09.000000Z"
+                                                                    },
+                                                                    "updated_at": {
+                                                                        "type": "string",
+                                                                        "format": "date-time",
+                                                                        "example": "2024-09-11T05:58:09.000000Z"
+                                                                    }
+                                                                },
+                                                                "type": "object"
+                                                            }
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Categoria não encontrada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucesso": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "mensagem_erro": {
+                                            "type": "string",
+                                            "example": "Categoria não encontrada"
+                                        },
+                                        "dados": {
+                                            "type": "null",
+                                            "example": null,
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor + log interno",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucesso": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "mensagem_erro": {
+                                            "type": "string",
+                                            "example": "Algo deu errado. Tente novamente mais tarde."
+                                        },
+                                        "dados": {
+                                            "type": "null",
+                                            "example": null,
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Categorias"
+                ],
+                "summary": "Atualizar categoria",
+                "description": "Atualiza uma categoria específica. O cache de categorias é limpo após a atualização.",
+                "operationId": "atualizarCategoria",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID da categoria",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "nome": {
+                                        "type": "string",
+                                        "example": "Novo Nome da Categoria"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Categoria atualizada com sucesso",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucesso": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "mensagem_erro": {
+                                            "type": "string",
+                                            "example": null,
+                                            "nullable": true
+                                        },
+                                        "dados": {
+                                            "properties": {
+                                                "categoria": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "nome": {
+                                                            "type": "string",
+                                                            "example": "Pizza"
+                                                        },
+                                                        "created_at": {
+                                                            "type": "string",
+                                                            "format": "date-time",
+                                                            "example": "2024-09-11T05:58:09.000000Z"
+                                                        },
+                                                        "updated_at": {
+                                                            "type": "string",
+                                                            "format": "date-time",
+                                                            "example": "2024-09-11T05:58:09.000000Z"
+                                                        },
+                                                        "produtos": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "integer",
+                                                                        "example": 1
+                                                                    },
+                                                                    "categoria_id": {
+                                                                        "type": "integer",
+                                                                        "example": 1
+                                                                    },
+                                                                    "nome": {
+                                                                        "type": "string",
+                                                                        "example": "Pizza de Strogonoff 😋"
+                                                                    },
+                                                                    "preco": {
+                                                                        "type": "number",
+                                                                        "format": "float",
+                                                                        "example": 47.77
+                                                                    },
+                                                                    "created_at": {
+                                                                        "type": "string",
+                                                                        "format": "date-time",
+                                                                        "example": "2024-09-11T05:58:09.000000Z"
+                                                                    },
+                                                                    "updated_at": {
+                                                                        "type": "string",
+                                                                        "format": "date-time",
+                                                                        "example": "2024-09-11T05:58:09.000000Z"
+                                                                    }
+                                                                },
+                                                                "type": "object"
+                                                            }
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Categoria não encontrada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucesso": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "mensagem_erro": {
+                                            "type": "string",
+                                            "example": "Categoria não encontrada."
+                                        },
+                                        "dados": {
+                                            "type": "null",
+                                            "example": null,
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Erro de validação",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucesso": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "mensagem_erro": {
+                                            "type": "string",
+                                            "oneOf": [
+                                                {
+                                                    "type": "string",
+                                                    "example": "O campo nome é obrigatório."
+                                                },
+                                                {
+                                                    "type": "string",
+                                                    "example": "O campo nome deve ser uma string."
+                                                },
+                                                {
+                                                    "type": "string",
+                                                    "example": "O campo nome não pode ter mais de 255 caracteres."
+                                                }
+                                            ]
+                                        },
+                                        "dados": {
+                                            "type": "null",
+                                            "example": null,
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor + log interno",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucesso": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "mensagem_erro": {
+                                            "type": "string",
+                                            "example": "Algo deu errado. Tente novamente mais tarde."
+                                        },
+                                        "dados": {
+                                            "type": "null",
+                                            "example": null,
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Categorias"
+                ],
+                "summary": "Deletar categoria",
+                "description": "Deleta uma categoria específica se não houver mais nada vinculado a ela. O cache de categorias é limpo após a exclusão.",
+                "operationId": "deletarCategoria",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID da categoria",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Categoria deletada com sucesso"
+                    },
+                    "400": {
+                        "description": "Categoria possui vínculos",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucesso": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "mensagem_erro": {
+                                            "type": "string",
+                                            "example": "Categoria possui vínculos e não pode ser deletada."
+                                        },
+                                        "dados": {
+                                            "type": "null",
+                                            "example": null,
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Categoria não encontrada",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucesso": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "mensagem_erro": {
+                                            "type": "string",
+                                            "example": "Categoria não encontrada."
+                                        },
+                                        "dados": {
+                                            "type": "null",
+                                            "example": null,
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor + log interno",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucesso": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "mensagem_erro": {
+                                            "type": "string",
+                                            "example": "Algo deu errado. Tente novamente mais tarde."
+                                        },
+                                        "dados": {
+                                            "type": "null",
+                                            "example": null,
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/pedidos": {
+            "get": {
+                "tags": [
+                    "Pedidos"
+                ],
+                "summary": "Lista pedidos",
+                "description": "Retorna uma lista de pedidos com seus produtos associados. Os resultados são armazenados em cache por 60 segundos.",
+                "operationId": "listarPedidos",
+                "parameters": [
+                    {
+                        "name": "itens_por_pagina",
+                        "in": "query",
+                        "description": "Número de itens por página",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "ordenar_por",
+                        "in": "query",
+                        "description": "Coluna para ordenação",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "ordem",
+                        "in": "query",
+                        "description": "Direção da ordenação",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "pagina",
+                        "in": "query",
+                        "description": "Número da página",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista de pedidos",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucesso": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "mensagem_erro": {
+                                            "type": "null",
+                                            "example": null,
+                                            "nullable": true
+                                        },
+                                        "dados": {
+                                            "properties": {
+                                                "pedidos": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "estado": {
+                                                                "type": "string",
+                                                                "example": "aberto"
+                                                            },
+                                                            "preco_total": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 90
+                                                            },
+                                                            "created_at": {
+                                                                "type": "string",
+                                                                "format": "date-time",
+                                                                "example": "2024-09-11T05:58:09.000000Z"
+                                                            },
+                                                            "updated_at": {
+                                                                "type": "string",
+                                                                "format": "date-time",
+                                                                "example": "2024-09-11T05:58:09.000000Z"
+                                                            },
+                                                            "produtos": {
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "properties": {
+                                                                        "id": {
+                                                                            "type": "integer",
+                                                                            "example": 1
+                                                                        },
+                                                                        "categoria_id": {
+                                                                            "type": "integer",
+                                                                            "example": 1
+                                                                        },
+                                                                        "nome": {
+                                                                            "type": "string",
+                                                                            "example": "Pizza de Strogonoff 😋"
+                                                                        },
+                                                                        "preco": {
+                                                                            "type": "number",
+                                                                            "format": "float",
+                                                                            "example": 47.77
+                                                                        },
+                                                                        "created_at": {
+                                                                            "type": "string",
+                                                                            "format": "date-time",
+                                                                            "example": "2024-09-11T05:58:09.000000Z"
+                                                                        },
+                                                                        "updated_at": {
+                                                                            "type": "string",
+                                                                            "format": "date-time",
+                                                                            "example": "2024-09-11T05:58:09.000000Z"
+                                                                        },
+                                                                        "pivot": {
+                                                                            "properties": {
+                                                                                "pedido_id": {
+                                                                                    "type": "integer",
+                                                                                    "example": 1
+                                                                                },
+                                                                                "produto_id": {
+                                                                                    "type": "integer",
+                                                                                    "example": 1
+                                                                                },
+                                                                                "preco": {
+                                                                                    "type": "number",
+                                                                                    "format": "float",
+                                                                                    "example": 45
+                                                                                },
+                                                                                "quantidade": {
+                                                                                    "type": "integer",
+                                                                                    "example": 2
+                                                                                }
+                                                                            },
+                                                                            "type": "object"
+                                                                        }
+                                                                    },
+                                                                    "type": "object"
+                                                                }
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "ultima_pagina": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "total_itens": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "filtro": {
+                                                    "properties": {
+                                                        "itens_por_pagina": {
+                                                            "type": "integer",
+                                                            "example": 10
+                                                        },
+                                                        "ordenar_por": {
+                                                            "type": "string",
+                                                            "example": "id"
+                                                        },
+                                                        "ordem": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "asc",
+                                                                "desc"
+                                                            ]
+                                                        },
+                                                        "pagina": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor + log interno",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucesso": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "mensagem_erro": {
+                                            "type": "string",
+                                            "example": "Algo deu errado. Tente novamente mais tarde."
+                                        },
+                                        "dados": {
+                                            "type": "null",
+                                            "example": null,
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Pedidos"
+                ],
+                "summary": "Criar novo pedido",
+                "description": "Cria um novo pedido. O cache de pedidos é limpo após a criação.",
+                "operationId": "criarPedido",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "produtos": {
+                                        "type": "array",
+                                        "items": {
+                                            "properties": {
+                                                "produto_id": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "quantidade": {
+                                                    "type": "integer",
+                                                    "example": 2
+                                                },
+                                                "preco": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 45
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Pedido criado com sucesso",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucesso": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "mensagem_erro": {
+                                            "type": "null",
+                                            "example": null,
+                                            "nullable": true
+                                        },
+                                        "dados": {
+                                            "properties": {
+                                                "pedido": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "estado": {
+                                                            "type": "string",
+                                                            "example": "aberto"
+                                                        },
+                                                        "preco_total": {
+                                                            "type": "number",
+                                                            "format": "float",
+                                                            "example": 90
+                                                        },
+                                                        "created_at": {
+                                                            "type": "string",
+                                                            "format": "date-time",
+                                                            "example": "2024-09-11T05:58:09.000000Z"
+                                                        },
+                                                        "updated_at": {
+                                                            "type": "string",
+                                                            "format": "date-time",
+                                                            "example": "2024-09-11T05:58:09.000000Z"
+                                                        },
+                                                        "produtos": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "integer",
+                                                                        "example": 1
+                                                                    },
+                                                                    "categoria_id": {
+                                                                        "type": "integer",
+                                                                        "example": 1
+                                                                    },
+                                                                    "nome": {
+                                                                        "type": "string",
+                                                                        "example": "Pizza de Strogonoff 😋"
+                                                                    },
+                                                                    "preco": {
+                                                                        "type": "number",
+                                                                        "format": "float",
+                                                                        "example": 47.77
+                                                                    },
+                                                                    "created_at": {
+                                                                        "type": "string",
+                                                                        "format": "date-time",
+                                                                        "example": "2024-09-11T05:58:09.000000Z"
+                                                                    },
+                                                                    "updated_at": {
+                                                                        "type": "string",
+                                                                        "format": "date-time",
+                                                                        "example": "2024-09-11T05:58:09.000000Z"
+                                                                    },
+                                                                    "pivot": {
+                                                                        "properties": {
+                                                                            "pedido_id": {
+                                                                                "type": "integer",
+                                                                                "example": 1
+                                                                            },
+                                                                            "produto_id": {
+                                                                                "type": "integer",
+                                                                                "example": 1
+                                                                            },
+                                                                            "preco": {
+                                                                                "type": "number",
+                                                                                "format": "float",
+                                                                                "example": 45
+                                                                            },
+                                                                            "quantidade": {
+                                                                                "type": "integer",
+                                                                                "example": 2
+                                                                            }
+                                                                        },
+                                                                        "type": "object"
+                                                                    }
+                                                                },
+                                                                "type": "object"
+                                                            }
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Erro de validação",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucesso": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "mensagem_erro": {
+                                            "type": "string",
+                                            "example": "Erro de validação."
+                                        },
+                                        "dados": {
+                                            "type": "null",
+                                            "example": null,
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor + log interno",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucesso": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "mensagem_erro": {
+                                            "type": "string",
+                                            "example": "Algo deu errado. Tente novamente mais tarde."
+                                        },
+                                        "dados": {
+                                            "type": "null",
+                                            "example": null,
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/pedidos/{id}": {
+            "get": {
+                "tags": [
+                    "Pedidos"
+                ],
+                "summary": "Mostrar pedido",
+                "description": "Retorna um pedido específico. O resultado é armazenado em cache por 60 segundos.",
+                "operationId": "visualizarPedido",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID do pedido",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Detalhes do pedido",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucesso": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "mensagem_erro": {
+                                            "type": "null",
+                                            "example": null,
+                                            "nullable": true
+                                        },
+                                        "dados": {
+                                            "properties": {
+                                                "pedido": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "estado": {
+                                                            "type": "string",
+                                                            "example": "aberto"
+                                                        },
+                                                        "preco_total": {
+                                                            "type": "number",
+                                                            "format": "float",
+                                                            "example": 90
+                                                        },
+                                                        "created_at": {
+                                                            "type": "string",
+                                                            "format": "date-time",
+                                                            "example": "2024-09-11T05:58:09.000000Z"
+                                                        },
+                                                        "updated_at": {
+                                                            "type": "string",
+                                                            "format": "date-time",
+                                                            "example": "2024-09-11T05:58:09.000000Z"
+                                                        },
+                                                        "produtos": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "integer",
+                                                                        "example": 1
+                                                                    },
+                                                                    "categoria_id": {
+                                                                        "type": "integer",
+                                                                        "example": 1
+                                                                    },
+                                                                    "nome": {
+                                                                        "type": "string",
+                                                                        "example": "Pizza de Strogonoff 😋"
+                                                                    },
+                                                                    "preco": {
+                                                                        "type": "number",
+                                                                        "format": "float",
+                                                                        "example": 47.77
+                                                                    },
+                                                                    "created_at": {
+                                                                        "type": "string",
+                                                                        "format": "date-time",
+                                                                        "example": "2024-09-11T05:58:09.000000Z"
+                                                                    },
+                                                                    "updated_at": {
+                                                                        "type": "string",
+                                                                        "format": "date-time",
+                                                                        "example": "2024-09-11T05:58:09.000000Z"
+                                                                    },
+                                                                    "pivot": {
+                                                                        "properties": {
+                                                                            "pedido_id": {
+                                                                                "type": "integer",
+                                                                                "example": 1
+                                                                            },
+                                                                            "produto_id": {
+                                                                                "type": "integer",
+                                                                                "example": 1
+                                                                            },
+                                                                            "preco": {
+                                                                                "type": "number",
+                                                                                "format": "float",
+                                                                                "example": 45
+                                                                            },
+                                                                            "quantidade": {
+                                                                                "type": "integer",
+                                                                                "example": 2
+                                                                            }
+                                                                        },
+                                                                        "type": "object"
+                                                                    }
+                                                                },
+                                                                "type": "object"
+                                                            }
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Pedido não encontrado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucesso": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "mensagem_erro": {
+                                            "type": "string",
+                                            "example": "Pedido não encontrado."
+                                        },
+                                        "dados": {
+                                            "type": "null",
+                                            "example": null,
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor + log interno",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucesso": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "mensagem_erro": {
+                                            "type": "string",
+                                            "example": "Algo deu errado. Tente novamente mais tarde."
+                                        },
+                                        "dados": {
+                                            "type": "null",
+                                            "example": null,
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Pedidos"
+                ],
+                "summary": "Atualiza pedido",
+                "description": "Atualiza um pedido específico. O cache de pedidos é limpo após a atualização.",
+                "operationId": "atualizarPedido",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID do pedido.",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "estado": {
+                                        "type": "string",
+                                        "enum": [
+                                            "aprovado",
+                                            "concluido",
+                                            "cancelado"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Pedido atualizado com sucesso",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucesso": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "mensagem_erro": {
+                                            "type": "null",
+                                            "example": null,
+                                            "nullable": true
+                                        },
+                                        "dados": {
+                                            "properties": {
+                                                "pedido": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "estado": {
+                                                            "type": "string",
+                                                            "example": "aprovado"
+                                                        },
+                                                        "preco_total": {
+                                                            "type": "number",
+                                                            "format": "float",
+                                                            "example": 90
+                                                        },
+                                                        "created_at": {
+                                                            "type": "string",
+                                                            "format": "date-time",
+                                                            "example": "2024-09-11T05:58:09.000000Z"
+                                                        },
+                                                        "updated_at": {
+                                                            "type": "string",
+                                                            "format": "date-time",
+                                                            "example": "2024-09-11T05:58:09.000000Z"
+                                                        },
+                                                        "produtos": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "integer",
+                                                                        "example": 1
+                                                                    },
+                                                                    "categoria_id": {
+                                                                        "type": "integer",
+                                                                        "example": 1
+                                                                    },
+                                                                    "nome": {
+                                                                        "type": "string",
+                                                                        "example": "Pizza de Strogonoff 😋"
+                                                                    },
+                                                                    "preco": {
+                                                                        "type": "number",
+                                                                        "format": "float",
+                                                                        "example": 47.77
+                                                                    },
+                                                                    "created_at": {
+                                                                        "type": "string",
+                                                                        "format": "date-time",
+                                                                        "example": "2024-09-11T05:58:09.000000Z"
+                                                                    },
+                                                                    "updated_at": {
+                                                                        "type": "string",
+                                                                        "format": "date-time",
+                                                                        "example": "2024-09-11T05:58:09.000000Z"
+                                                                    },
+                                                                    "pivot": {
+                                                                        "properties": {
+                                                                            "pedido_id": {
+                                                                                "type": "integer",
+                                                                                "example": 1
+                                                                            },
+                                                                            "produto_id": {
+                                                                                "type": "integer",
+                                                                                "example": 1
+                                                                            },
+                                                                            "preco": {
+                                                                                "type": "number",
+                                                                                "format": "float",
+                                                                                "example": 45
+                                                                            },
+                                                                            "quantidade": {
+                                                                                "type": "integer",
+                                                                                "example": 2
+                                                                            }
+                                                                        },
+                                                                        "type": "object"
+                                                                    }
+                                                                },
+                                                                "type": "object"
+                                                            }
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Erro de validação",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucesso": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "mensagem_erro": {
+                                            "type": "string",
+                                            "example": "Não é possível alterar um pedido cancelado para outro estado."
+                                        },
+                                        "dados": {
+                                            "type": "null",
+                                            "example": null,
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Pedido não encontrado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucesso": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "mensagem_erro": {
+                                            "type": "string",
+                                            "example": "Pedido não encontrado."
+                                        },
+                                        "dados": {
+                                            "type": "null",
+                                            "example": null,
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor + log interno",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucesso": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "mensagem_erro": {
+                                            "type": "string",
+                                            "example": "Algo deu errado. Tente novamente mais tarde."
+                                        },
+                                        "dados": {
+                                            "type": "null",
+                                            "example": null,
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/produtos": {
+            "get": {
+                "tags": [
+                    "Produtos"
+                ],
+                "summary": "Listar produtos",
+                "description": "Retorna uma lista de produtos. Os resultados são armazenados em cache por 60 segundos.",
+                "operationId": "listarProdutos",
+                "parameters": [
+                    {
+                        "name": "itens_por_pagina",
+                        "in": "query",
+                        "description": "Número de itens por página",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "name": "ordenar_por",
+                        "in": "query",
+                        "description": "Coluna para ordenação",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "ordem",
+                        "in": "query",
+                        "description": "Direção da ordenação",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "asc",
+                                "desc"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "pagina",
+                        "in": "query",
+                        "description": "Número da página",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Sucesso",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucesso": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "mensagem_erro": {
+                                            "type": "null",
+                                            "example": null,
+                                            "nullable": true
+                                        },
+                                        "dados": {
+                                            "properties": {
+                                                "produtos": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "properties": {
+                                                            "id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "categoria_id": {
+                                                                "type": "integer",
+                                                                "example": 1
+                                                            },
+                                                            "nome": {
+                                                                "type": "string",
+                                                                "example": "Pizza de Strogonoff 😋"
+                                                            },
+                                                            "preco": {
+                                                                "type": "number",
+                                                                "format": "float",
+                                                                "example": 47.77
+                                                            },
+                                                            "created_at": {
+                                                                "type": "string",
+                                                                "format": "date-time",
+                                                                "example": "2024-09-11T05:58:09.000000Z"
+                                                            },
+                                                            "updated_at": {
+                                                                "type": "string",
+                                                                "format": "date-time",
+                                                                "example": "2024-09-11T05:58:09.000000Z"
+                                                            },
+                                                            "categoria": {
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "integer",
+                                                                        "example": 1
+                                                                    },
+                                                                    "nome": {
+                                                                        "type": "string",
+                                                                        "example": "Pizza"
+                                                                    },
+                                                                    "created_at": {
+                                                                        "type": "string",
+                                                                        "format": "date-time",
+                                                                        "example": "2024-09-11T05:58:09.000000Z"
+                                                                    },
+                                                                    "updated_at": {
+                                                                        "type": "string",
+                                                                        "format": "date-time",
+                                                                        "example": "2024-09-11T05:58:09.000000Z"
+                                                                    }
+                                                                },
+                                                                "type": "object"
+                                                            }
+                                                        },
+                                                        "type": "object"
+                                                    }
+                                                },
+                                                "ultima_pagina": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "total_itens": {
+                                                    "type": "integer",
+                                                    "example": 1
+                                                },
+                                                "filtro": {
+                                                    "properties": {
+                                                        "itens_por_pagina": {
+                                                            "type": "integer",
+                                                            "example": 10
+                                                        },
+                                                        "ordenar_por": {
+                                                            "type": "string",
+                                                            "example": "id"
+                                                        },
+                                                        "ordem": {
+                                                            "type": "string",
+                                                            "enum": [
+                                                                "asc",
+                                                                "desc"
+                                                            ]
+                                                        },
+                                                        "pagina": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor + log interno",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucesso": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "mensagem_erro": {
+                                            "type": "string",
+                                            "example": "Algo deu errado. Tente novamente mais tarde."
+                                        },
+                                        "dados": {
+                                            "type": "null",
+                                            "example": null,
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "tags": [
+                    "Produtos"
+                ],
+                "summary": "Criar novo produto",
+                "description": "Cria um novo produto. O cache de produtos é limpo após a criação.",
+                "operationId": "criarProduto",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "categoria_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "nome": {
+                                        "type": "string",
+                                        "example": "Pizza de Strogonoff 😋"
+                                    },
+                                    "preco": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 47.77
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Produto criado com sucesso",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucesso": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "mensagem_erro": {
+                                            "type": "null",
+                                            "example": null,
+                                            "nullable": true
+                                        },
+                                        "dados": {
+                                            "properties": {
+                                                "produto": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "categoria_id": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "nome": {
+                                                            "type": "string",
+                                                            "example": "Pizza de Strogonoff 😋"
+                                                        },
+                                                        "preco": {
+                                                            "type": "number",
+                                                            "format": "float",
+                                                            "example": 47.77
+                                                        },
+                                                        "created_at": {
+                                                            "type": "string",
+                                                            "format": "date-time",
+                                                            "example": "2024-09-11T05:58:09.000000Z"
+                                                        },
+                                                        "updated_at": {
+                                                            "type": "string",
+                                                            "format": "date-time",
+                                                            "example": "2024-09-11T05:58:09.000000Z"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Erro de validação",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucesso": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "mensagem_erro": {
+                                            "type": "string",
+                                            "oneOf": [
+                                                {
+                                                    "type": "string",
+                                                    "example": "O campo categoria_id é obrigatório."
+                                                },
+                                                {
+                                                    "type": "string",
+                                                    "example": "O campo nome é obrigatório."
+                                                },
+                                                {
+                                                    "type": "string",
+                                                    "example": "O campo preco é obrigatório."
+                                                },
+                                                {
+                                                    "type": "string",
+                                                    "example": "O campo preco deve ser um número."
+                                                },
+                                                {
+                                                    "type": "string",
+                                                    "example": "O campo nome não pode ter mais de 255 caracteres."
+                                                },
+                                                {
+                                                    "type": "string",
+                                                    "example": "O nome do produto já existe."
+                                                }
+                                            ]
+                                        },
+                                        "dados": {
+                                            "type": "null",
+                                            "example": null,
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor + log interno",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucesso": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "mensagem_erro": {
+                                            "type": "string",
+                                            "example": "Algo deu errado. Tente novamente mais tarde."
+                                        },
+                                        "dados": {
+                                            "type": "null",
+                                            "example": null,
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/produtos/{id}": {
+            "get": {
+                "tags": [
+                    "Produtos"
+                ],
+                "summary": "Mostrar produto",
+                "description": "Retorna um produto específico com sua categoria e pedidos associados. O resultado é armazenado em cache por 60 segundos.",
+                "operationId": "visualizarProduto",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID do produto",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Sucesso",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucesso": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "mensagem_erro": {
+                                            "type": "null",
+                                            "example": null,
+                                            "nullable": true
+                                        },
+                                        "dados": {
+                                            "properties": {
+                                                "produto": {
+                                                    "properties": {
+                                                        "id": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "categoria_id": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "nome": {
+                                                            "type": "string",
+                                                            "example": "Pizza de Strogonoff 😋"
+                                                        },
+                                                        "preco": {
+                                                            "type": "number",
+                                                            "format": "float",
+                                                            "example": 47.77
+                                                        },
+                                                        "created_at": {
+                                                            "type": "string",
+                                                            "format": "date-time",
+                                                            "example": "2024-09-11T05:58:09.000000Z"
+                                                        },
+                                                        "updated_at": {
+                                                            "type": "string",
+                                                            "format": "date-time",
+                                                            "example": "2024-09-11T05:58:09.000000Z"
+                                                        },
+                                                        "categoria": {
+                                                            "properties": {
+                                                                "id": {
+                                                                    "type": "integer",
+                                                                    "example": 1
+                                                                },
+                                                                "nome": {
+                                                                    "type": "string",
+                                                                    "example": "Pizza"
+                                                                },
+                                                                "created_at": {
+                                                                    "type": "string",
+                                                                    "format": "date-time",
+                                                                    "example": "2024-09-11T05:58:09.000000Z"
+                                                                },
+                                                                "updated_at": {
+                                                                    "type": "string",
+                                                                    "format": "date-time",
+                                                                    "example": "2024-09-11T05:58:09.000000Z"
+                                                                }
+                                                            },
+                                                            "type": "object"
+                                                        },
+                                                        "pedidos": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "properties": {
+                                                                    "id": {
+                                                                        "type": "integer",
+                                                                        "example": 1
+                                                                    },
+                                                                    "produto_id": {
+                                                                        "type": "integer",
+                                                                        "example": 1
+                                                                    },
+                                                                    "quantidade": {
+                                                                        "type": "integer",
+                                                                        "example": 2
+                                                                    },
+                                                                    "created_at": {
+                                                                        "type": "string",
+                                                                        "format": "date-time",
+                                                                        "example": "2024-09-11T05:58:09.000000Z"
+                                                                    },
+                                                                    "updated_at": {
+                                                                        "type": "string",
+                                                                        "format": "date-time",
+                                                                        "example": "2024-09-11T05:58:09.000000Z"
+                                                                    }
+                                                                },
+                                                                "type": "object"
+                                                            }
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Produto não encontrado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucesso": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "mensagem_erro": {
+                                            "type": "string",
+                                            "example": "Produto não encontrado."
+                                        },
+                                        "dados": {
+                                            "type": "null",
+                                            "example": null,
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor + log interno",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucesso": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "mensagem_erro": {
+                                            "type": "string",
+                                            "example": "Algo deu errado. Tente novamente mais tarde."
+                                        },
+                                        "dados": {
+                                            "type": "null",
+                                            "example": null,
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Produtos"
+                ],
+                "summary": "Atualizar produto",
+                "description": "Atualiza um produto específico. O cache de produtos é limpo após a atualização.",
+                "operationId": "atualizarProduto",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID do produto",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "categoria_id": {
+                                        "type": "integer",
+                                        "example": 1
+                                    },
+                                    "nome": {
+                                        "type": "string",
+                                        "example": "Novo Nome do Produto"
+                                    },
+                                    "preco": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 47.77
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Produto atualizado com sucesso",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucesso": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "mensagem_erro": {
+                                            "type": "null",
+                                            "example": null,
+                                            "nullable": true
+                                        },
+                                        "dados": {
+                                            "properties": {
+                                                "produto": {
+                                                    "$ref": "#/components/schemas/Produto"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Produto não encontrado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucesso": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "mensagem_erro": {
+                                            "type": "string",
+                                            "example": "Produto não encontrado."
+                                        },
+                                        "dados": {
+                                            "type": "null",
+                                            "example": null,
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Erro de validação",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucesso": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "mensagem_erro": {
+                                            "type": "string",
+                                            "oneOf": [
+                                                {
+                                                    "type": "string",
+                                                    "example": "O campo categoria_id é obrigatório."
+                                                },
+                                                {
+                                                    "type": "string",
+                                                    "example": "O campo nome é obrigatório."
+                                                },
+                                                {
+                                                    "type": "string",
+                                                    "example": "O campo preco é obrigatório."
+                                                },
+                                                {
+                                                    "type": "string",
+                                                    "example": "O campo preco deve ser um número."
+                                                },
+                                                {
+                                                    "type": "string",
+                                                    "example": "O campo nome não pode ter mais de 255 caracteres."
+                                                }
+                                            ]
+                                        },
+                                        "dados": {
+                                            "type": "null",
+                                            "example": null,
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor + log interno",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucesso": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "mensagem_erro": {
+                                            "type": "string",
+                                            "example": "Algo deu errado. Tente novamente mais tarde."
+                                        },
+                                        "dados": {
+                                            "type": "null",
+                                            "example": null,
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "tags": [
+                    "Produtos"
+                ],
+                "summary": "Deletar produto",
+                "description": "Deleta um produto específico se não houver mais nada vinculado a ele. O cache de produtos é limpo após a exclusão.",
+                "operationId": "deletarProduto",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "ID do produto",
+                        "required": true,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Produto deletado com sucesso"
+                    },
+                    "400": {
+                        "description": "Produto possui vínculos",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucesso": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "mensagem_erro": {
+                                            "type": "string",
+                                            "example": "Produto possui vínculos e não pode ser deletado."
+                                        },
+                                        "dados": {
+                                            "type": "null",
+                                            "example": null,
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Produto não encontrado",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucesso": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "mensagem_erro": {
+                                            "type": "string",
+                                            "example": "Produto não encontrado."
+                                        },
+                                        "dados": {
+                                            "type": "null",
+                                            "example": null,
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor + log interno",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "sucesso": {
+                                            "type": "boolean",
+                                            "example": false
+                                        },
+                                        "mensagem_erro": {
+                                            "type": "string",
+                                            "example": "Algo deu errado. Tente novamente mais tarde."
+                                        },
+                                        "dados": {
+                                            "type": "null",
+                                            "example": null,
+                                            "nullable": true
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "Categoria": {
+                "title": "Categoria",
+                "description": "Modelo de Categoria",
+                "properties": {
+                    "id": {
+                        "description": "ID da categoria",
+                        "type": "integer"
+                    },
+                    "nome": {
+                        "description": "Nome da categoria",
+                        "type": "string"
+                    },
+                    "produtos": {
+                        "description": "Produtos associados à categoria",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Produto"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "Pedido": {
+                "title": "Pedido",
+                "description": "Modelo de Pedido",
+                "properties": {
+                    "id": {
+                        "description": "ID do pedido",
+                        "type": "integer"
+                    },
+                    "estado": {
+                        "description": "Estado do pedido",
+                        "type": "string",
+                        "enum": [
+                            "aberto",
+                            "aprovado",
+                            "concluido",
+                            "cancelado"
+                        ]
+                    },
+                    "preco_total": {
+                        "description": "Preço total do pedido",
+                        "type": "number",
+                        "format": "float"
+                    },
+                    "produtos": {
+                        "description": "Produtos associados ao pedido",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Produto"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "Produto": {
+                "title": "Produto",
+                "description": "Modelo de Produto",
+                "properties": {
+                    "id": {
+                        "description": "ID do produto",
+                        "type": "integer"
+                    },
+                    "nome": {
+                        "description": "Nome do produto",
+                        "type": "string"
+                    },
+                    "preco": {
+                        "description": "Preço do produto",
+                        "type": "number",
+                        "format": "float"
+                    },
+                    "categoria_id": {
+                        "description": "ID da categoria do produto",
+                        "type": "integer"
+                    },
+                    "categoria": {
+                        "$ref": "#/components/schemas/Categoria"
+                    },
+                    "pedidos": {
+                        "description": "Pedidos associados ao produto",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Pedido"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "ProdutoPedido": {
+                "title": "ProdutoPedido",
+                "description": "Modelo de ProdutoPedido",
+                "properties": {
+                    "id": {
+                        "description": "ID do produto pedido",
+                        "type": "integer"
+                    },
+                    "pedido_id": {
+                        "description": "ID do pedido",
+                        "type": "integer"
+                    },
+                    "produto_id": {
+                        "description": "ID do produto",
+                        "type": "integer"
+                    },
+                    "preco": {
+                        "description": "Preço do produto no pedido",
+                        "type": "number",
+                        "format": "float"
+                    },
+                    "quantidade": {
+                        "description": "Quantidade do produto no pedido",
+                        "type": "integer"
+                    }
+                },
+                "type": "object"
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Categorias",
+            "description": "Categorias"
+        },
+        {
+            "name": "Pedidos",
+            "description": "Pedidos"
+        },
+        {
+            "name": "Produtos",
+            "description": "Produtos"
+        }
+    ]
+}
