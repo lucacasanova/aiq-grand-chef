@@ -23,6 +23,10 @@ if [ ! -f /var/www/html/.env ]; then
     cp /var/www/html/.env.example /var/www/html/.env
 fi
 
+# Instalar dependências do Composer
+echo "Instalando dependências do Composer..."
+composer install
+
 # Gerar chave de criptografia do Laravel
 echo "Gerando chave de criptografia do Laravel..."
 php artisan key:generate --force

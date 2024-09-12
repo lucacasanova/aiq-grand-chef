@@ -48,16 +48,6 @@ RUN mkdir -p /var/www/.cache/composer \
     && chown -R www-data:www-data /var/www/.cache/composer \
     && chmod -R 775 /var/www/.cache/composer
 
-# Executar composer install como www-data
-USER www-data
-RUN composer install
-
-# Voltar para o usuário root para copiar as configurações
-USER root
-
-# Gerar chave de criptografia
-RUN php artisan key:generate --force
-
 # Copiar configuração do Nginx
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
