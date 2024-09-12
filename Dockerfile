@@ -48,6 +48,11 @@ RUN mkdir -p /var/www/.cache/composer \
     && chown -R www-data:www-data /var/www/.cache/composer \
     && chmod -R 775 /var/www/.cache/composer
 
+# Ajustar permissões do diretório node_modules
+RUN mkdir -p /var/www/html/node_modules \
+    && chown -R www-data:www-data /var/www/html/node_modules \
+    && chmod -R 775 /var/www/html/node_modules
+
 # Copiar configuração do Nginx
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 

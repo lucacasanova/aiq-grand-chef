@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\atualizarPedido;
+use App\Events\criarPedido;
+use App\Events\listarPedido;
 use App\Models\Pedido;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -154,6 +157,8 @@ class PedidoController extends Controller
                     ],
                 ],
             ];
+
+            event(new listarPedido($pedidos->items()));
 
             return response()->json($response);
         } catch (\Exception $e) {
@@ -321,6 +326,8 @@ class PedidoController extends Controller
                     'pedido' => $pedido,
                 ],
             ];
+
+            event(new criarPedido($pedido));
 
             return response()->json($response, 201);
         } catch (\Illuminate\Validation\ValidationException $e) {
@@ -652,6 +659,8 @@ class PedidoController extends Controller
                     'pedido' => $pedido,
                 ],
             ];
+
+            event(new atualizarPedido($pedido));
 
             return response()->json($response, 200);
         } catch (\Exception $e) {

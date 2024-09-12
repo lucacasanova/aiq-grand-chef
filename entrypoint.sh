@@ -27,6 +27,10 @@ fi
 echo "Instalando dependências do Composer..."
 composer install
 
+# Instalar dependências do npm
+echo "Instalando dependências do npm..."
+npm install
+
 # Gerar chave de criptografia do Laravel
 echo "Gerando chave de criptografia do Laravel..."
 php artisan key:generate --force
@@ -45,6 +49,14 @@ php-fpm8.3 &
 
 # Esperar que todos os processos em segundo plano sejam concluídos
 wait
+
+# Iniciar o Reverb do Laravel em segundo plano
+echo "Iniciando o Reverb do Laravel..."
+php artisan reverb:start &
+
+# Iniciar o Worker do Laravel em segundo plano
+echo "Iniciando o Worker do Laravel..."
+php artisan queue:work &
 
 # Iniciar Nginx
 echo "Iniciando Nginx..."

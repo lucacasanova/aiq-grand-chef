@@ -1,5 +1,6 @@
 <?php
 
+use App\Events\atualizarPedido;
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\CategoriaController;

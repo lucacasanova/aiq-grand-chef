@@ -14,9 +14,7 @@
     "paths": {
         "/cardapio": {
             "get": {
-                "tags": [
-                    "Categorias"
-                ],
+                "tags": ["Categorias"],
                 "summary": "Listar categorias",
                 "description": "Retorna uma lista de categorias com seus produtos associados. Os resultados são armazenados em cache por 60 segundos.",
                 "operationId": "listarCategorias",
@@ -46,10 +44,7 @@
                         "required": false,
                         "schema": {
                             "type": "string",
-                            "enum": [
-                                "asc",
-                                "desc"
-                            ]
+                            "enum": ["asc", "desc"]
                         }
                     },
                     {
@@ -90,7 +85,7 @@
                                                             },
                                                             "nome": {
                                                                 "type": "string",
-                                                                "example": "Pizza"
+                                                                "example": "Pizza 💜"
                                                             },
                                                             "created_at": {
                                                                 "type": "string",
@@ -212,9 +207,7 @@
         },
         "/categorias": {
             "post": {
-                "tags": [
-                    "Categorias"
-                ],
+                "tags": ["Categorias"],
                 "summary": "Criar nova categoria",
                 "description": "Cria uma nova categoria. O cache de categorias é limpo após a criação.",
                 "operationId": "criarCategoria",
@@ -226,7 +219,7 @@
                                 "properties": {
                                     "nome": {
                                         "type": "string",
-                                        "example": "Pizza"
+                                        "example": "Pizza 💜"
                                     }
                                 },
                                 "type": "object"
@@ -260,7 +253,7 @@
                                                         },
                                                         "nome": {
                                                             "type": "string",
-                                                            "example": "Pizza"
+                                                            "example": "Pizza 💜"
                                                         },
                                                         "created_at": {
                                                             "type": "string",
@@ -356,9 +349,7 @@
         },
         "/categorias/{id}": {
             "get": {
-                "tags": [
-                    "Categorias"
-                ],
+                "tags": ["Categorias"],
                 "summary": "Mostrar categoria",
                 "description": "Retorna uma categoria específica com seus produtos associados. O resultado é armazenado em cache por 60 segundos.",
                 "operationId": "visualizarCategoria",
@@ -399,7 +390,7 @@
                                                         },
                                                         "nome": {
                                                             "type": "string",
-                                                            "example": "Pizza"
+                                                            "example": "Pizza 💜"
                                                         },
                                                         "created_at": {
                                                             "type": "string",
@@ -511,9 +502,7 @@
                 }
             },
             "put": {
-                "tags": [
-                    "Categorias"
-                ],
+                "tags": ["Categorias"],
                 "summary": "Atualizar categoria",
                 "description": "Atualiza uma categoria específica. O cache de categorias é limpo após a atualização.",
                 "operationId": "atualizarCategoria",
@@ -536,7 +525,7 @@
                                 "properties": {
                                     "nome": {
                                         "type": "string",
-                                        "example": "Novo Nome da Categoria"
+                                        "example": "Pizza 💜"
                                     }
                                 },
                                 "type": "object"
@@ -570,7 +559,7 @@
                                                         },
                                                         "nome": {
                                                             "type": "string",
-                                                            "example": "Pizza"
+                                                            "example": "Pizza 💜"
                                                         },
                                                         "created_at": {
                                                             "type": "string",
@@ -720,9 +709,7 @@
                 }
             },
             "delete": {
-                "tags": [
-                    "Categorias"
-                ],
+                "tags": ["Categorias"],
                 "summary": "Deletar categoria",
                 "description": "Deleta uma categoria específica se não houver mais nada vinculado a ela. O cache de categorias é limpo após a exclusão.",
                 "operationId": "deletarCategoria",
@@ -821,9 +808,7 @@
         },
         "/pedidos": {
             "get": {
-                "tags": [
-                    "Pedidos"
-                ],
+                "tags": ["Pedidos"],
                 "summary": "Lista pedidos",
                 "description": "Retorna uma lista de pedidos com seus produtos associados. Os resultados são armazenados em cache por 60 segundos.",
                 "operationId": "listarPedidos",
@@ -853,10 +838,7 @@
                         "required": false,
                         "schema": {
                             "type": "string",
-                            "enum": [
-                                "asc",
-                                "desc"
-                            ]
+                            "enum": ["asc", "desc"]
                         }
                     },
                     {
@@ -1044,9 +1026,7 @@
                 }
             },
             "post": {
-                "tags": [
-                    "Pedidos"
-                ],
+                "tags": ["Pedidos"],
                 "summary": "Criar novo pedido",
                 "description": "Cria um novo pedido. O cache de pedidos é limpo após a criação.",
                 "operationId": "criarPedido",
@@ -1250,9 +1230,7 @@
         },
         "/pedidos/{id}": {
             "get": {
-                "tags": [
-                    "Pedidos"
-                ],
+                "tags": ["Pedidos"],
                 "summary": "Mostrar pedido",
                 "description": "Retorna um pedido específico. O resultado é armazenado em cache por 60 segundos.",
                 "operationId": "visualizarPedido",
@@ -1432,9 +1410,7 @@
                 }
             },
             "put": {
-                "tags": [
-                    "Pedidos"
-                ],
+                "tags": ["Pedidos"],
                 "summary": "Atualiza pedido",
                 "description": "Atualiza um pedido específico. O cache de pedidos é limpo após a atualização.",
                 "operationId": "atualizarPedido",
@@ -1661,9 +1637,7 @@
         },
         "/produtos": {
             "get": {
-                "tags": [
-                    "Produtos"
-                ],
+                "tags": ["Produtos"],
                 "summary": "Listar produtos",
                 "description": "Retorna uma lista de produtos. Os resultados são armazenados em cache por 60 segundos.",
                 "operationId": "listarProdutos",
@@ -1693,10 +1667,7 @@
                         "required": false,
                         "schema": {
                             "type": "string",
-                            "enum": [
-                                "asc",
-                                "desc"
-                            ]
+                            "enum": ["asc", "desc"]
                         }
                     },
                     {
@@ -1766,7 +1737,7 @@
                                                                     },
                                                                     "nome": {
                                                                         "type": "string",
-                                                                        "example": "Pizza"
+                                                                        "example": "Pizza 💜"
                                                                     },
                                                                     "created_at": {
                                                                         "type": "string",
@@ -1854,9 +1825,7 @@
                 }
             },
             "post": {
-                "tags": [
-                    "Produtos"
-                ],
+                "tags": ["Produtos"],
                 "summary": "Criar novo produto",
                 "description": "Cria um novo produto. O cache de produtos é limpo após a criação.",
                 "operationId": "criarProduto",
@@ -1931,6 +1900,19 @@
                                                             "type": "string",
                                                             "format": "date-time",
                                                             "example": "2024-09-11T05:58:09.000000Z"
+                                                        },
+                                                        "categoria": {
+                                                            "properties": {
+                                                                "id": {
+                                                                    "type": "integer",
+                                                                    "example": 1
+                                                                },
+                                                                "nome": {
+                                                                    "type": "string",
+                                                                    "example": "Categoria Exemplo"
+                                                                }
+                                                            },
+                                                            "type": "object"
                                                         }
                                                     },
                                                     "type": "object"
@@ -2024,9 +2006,7 @@
         },
         "/produtos/{id}": {
             "get": {
-                "tags": [
-                    "Produtos"
-                ],
+                "tags": ["Produtos"],
                 "summary": "Mostrar produto",
                 "description": "Retorna um produto específico com sua categoria e pedidos associados. O resultado é armazenado em cache por 60 segundos.",
                 "operationId": "visualizarProduto",
@@ -2096,7 +2076,7 @@
                                                                 },
                                                                 "nome": {
                                                                     "type": "string",
-                                                                    "example": "Pizza"
+                                                                    "example": "Pizza 💜"
                                                                 },
                                                                 "created_at": {
                                                                     "type": "string",
@@ -2206,9 +2186,7 @@
                 }
             },
             "put": {
-                "tags": [
-                    "Produtos"
-                ],
+                "tags": ["Produtos"],
                 "summary": "Atualizar produto",
                 "description": "Atualiza um produto específico. O cache de produtos é limpo após a atualização.",
                 "operationId": "atualizarProduto",
@@ -2377,9 +2355,7 @@
                 }
             },
             "delete": {
-                "tags": [
-                    "Produtos"
-                ],
+                "tags": ["Produtos"],
                 "summary": "Deletar produto",
                 "description": "Deleta um produto específico se não houver mais nada vinculado a ele. O cache de produtos é limpo após a exclusão.",
                 "operationId": "deletarProduto",
@@ -2512,12 +2488,7 @@
                     "estado": {
                         "description": "Estado do pedido",
                         "type": "string",
-                        "enum": [
-                            "aberto",
-                            "aprovado",
-                            "concluido",
-                            "cancelado"
-                        ]
+                        "enum": ["aberto", "aprovado", "concluido", "cancelado"]
                     },
                     "preco_total": {
                         "description": "Preço total do pedido",

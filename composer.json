@@ -9,6 +9,8 @@
         "darkaonline/l5-swagger": "^8.6",
         "doctrine/annotations": "^2.0",
         "laravel/framework": "^11.9",
+        "laravel/pulse": "^1.2",
+        "laravel/reverb": "^1.0",
         "laravel/tinker": "^2.9"
     },
     "require-dev": {
@@ -62,6 +64,6 @@
             "php-http/discovery": true
         }
     },
-    "minimum-stability": "stable",
+    "minimum-stability": "beta",
     "prefer-stable": true
 }

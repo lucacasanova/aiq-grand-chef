@@ -7,9 +7,10 @@ Bem-vindo ao Teste Aiq Grand Chef Laravel! 🎉 Este projeto é uma API para ger
 - **Docker**: Execução e gerenciamento de contêineres.
 - **Nginx**: Servidor web utilizado para servir a aplicação.
 - **PHP-FPM 8.3**: Gerenciador de processos FastCGI para PHP.
-- **Swagger/OpenAPI**: Ferramenta para documentação da API.
 - **Laravel 11**: Framework PHP utilizado para desenvolver a aplicação.
+- **Swagger/OpenAPI**: Ferramenta para documentação da API.
 - **Redis**: Armazenamento de dados em memória utilizado para cache.
+- **WebSocket**: Protocolo utilizado para comunicação em tempo real entre o backend e o frontend.
 - **PostgreSQL**: Banco de dados relacional utilizado para armazenar dados da aplicação.
 
 ## Pré-requisitos
@@ -48,12 +49,14 @@ Certifique-se de ter o Docker e o Docker Compose instalados em sua máquina.
 
 Após seguir os passos de configuração, a aplicação estará disponível em `http://localhost:8000`.
 
+## Aah, esse backend utiliza websocket para manter o frontend sempre atualizado. Acesse [http://localhost:8000/](http://localhost:8000/){:target="_blank"} em uma segunda aba para ver as atualizações conforme os testes 💜
+
 ## Documentação da API
 
 A documentação da API é gerada utilizando Swagger/OpenAPI. Para acessar a documentação, siga os passos abaixo:
 
 1. Certifique-se de que a aplicação está em execução.
-2. Acesse `http://localhost:8000/api/documentation` no seu navegador.
+2. Acesse [http://localhost:8000/api/documentation](http://localhost:8000/api/documentation) no seu navegador.
 
 ## Explicação do `entrypoint.sh`
 

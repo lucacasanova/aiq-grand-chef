@@ -6,7 +6,8 @@ services:
       context: .
     container_name: grandchef_laravel
     ports:
-      - "8000:80"
+      - "${APP_PORT:-8000}:80"
+      - "${REVERB_PORT:-8080}:8080"
     volumes:
       - .:/var/www/html
       - ./nginx.conf:/etc/nginx/sites-enabled/default

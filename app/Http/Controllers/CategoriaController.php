@@ -2,7 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\atualizarCategoria;
+use App\Events\criarCategoria;
+use App\Events\listarCategoria;
 use App\Models\Categoria;
+use Illuminate\Broadcasting\Channel;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -60,7 +64,7 @@ class CategoriaController extends Controller
      *             @OA\Property(property="dados", type="object",
      *                 @OA\Property(property="categorias", type="array", @OA\Items(
      *                     @OA\Property(property="id", type="integer", example=1),
-     *                     @OA\Property(property="nome", type="string", example="Pizza"),
+     *                     @OA\Property(property="nome", type="string", example="Pizza 💜"),
      *                     @OA\Property(property="created_at", type="string", format="date-time", example="2024-09-11T05:58:09.000000Z"),
      *                     @OA\Property(property="updated_at", type="string", format="date-time", example="2024-09-11T05:58:09.000000Z"),
      *                     @OA\Property(property="produtos", type="array", @OA\Items(
@@ -139,6 +143,8 @@ class CategoriaController extends Controller
                 ],
             ];
 
+            event(new listarCategoria($categorias->items()));
+
             return response()->json($response);
         } catch (\Exception $e) {
             // Log detalhado do erro
@@ -171,7 +177,7 @@ class CategoriaController extends Controller
      *         required=true,
      *         @OA\JsonContent(
      *             type="object",
-     *             @OA\Property(property="nome", type="string", example="Pizza")
+     *             @OA\Property(property="nome", type="string", example="Pizza 💜")
      *         )
      *     ),
      *     @OA\Response(
@@ -183,7 +189,7 @@ class CategoriaController extends Controller
      *             @OA\Property(property="dados", type="object",
      *                 @OA\Property(property="categoria", type="object",
      *                     @OA\Property(property="id", type="integer", example=1),
-     *                     @OA\Property(property="nome", type="string", example="Pizza"),
+     *                     @OA\Property(property="nome", type="string", example="Pizza 💜"),
      *                     @OA\Property(property="created_at", type="string", format="date-time", example="2024-09-11T05:58:09.000000Z"),
      *                     @OA\Property(property="updated_at", type="string", format="date-time", example="2024-09-11T05:58:09.000000Z")
      *                    
@@ -253,6 +259,8 @@ class CategoriaController extends Controller
                 ],
             ];
 
+            event(new criarCategoria($categoria));
+
             return response()->json($response, 201);
         } catch (\Illuminate\Validation\ValidationException $e) {
             // Resposta de erro de validação
@@ -307,7 +315,7 @@ class CategoriaController extends Controller
      *             @OA\Property(property="dados", type="object",
      *                 @OA\Property(property="categoria", type="object",
      *                     @OA\Property(property="id", type="integer", example=1),
-     *                     @OA\Property(property="nome", type="string", example="Pizza"),
+     *                     @OA\Property(property="nome", type="string", example="Pizza 💜"),
      *                     @OA\Property(property="created_at", type="string", format="date-time", example="2024-09-11T05:58:09.000000Z"),
      *                     @OA\Property(property="updated_at", type="string", format="date-time", example="2024-09-11T05:58:09.000000Z"),
      *                     @OA\Property(property="produtos", type="array", @OA\Items(
@@ -423,7 +431,7 @@ class CategoriaController extends Controller
      *         required=true,
      *         @OA\JsonContent(
      *             type="object",
-     *             @OA\Property(property="nome", type="string", example="Novo Nome da Categoria")
+     *             @OA\Property(property="nome", type="string", example="Pizza 💜")
      *         )
      *     ),
      *     @OA\Response(
@@ -435,7 +443,7 @@ class CategoriaController extends Controller
      *             @OA\Property(property="dados", type="object",
      *                 @OA\Property(property="categoria", type="object",
      *                     @OA\Property(property="id", type="integer", example=1),
-     *                     @OA\Property(property="nome", type="string", example="Pizza"),
+     *                     @OA\Property(property="nome", type="string", example="Pizza 💜"),
      *                     @OA\Property(property="created_at", type="string", format="date-time", example="2024-09-11T05:58:09.000000Z"),
      *                     @OA\Property(property="updated_at", type="string", format="date-time", example="2024-09-11T05:58:09.000000Z"),
      *                     @OA\Property(property="produtos", type="array", @OA\Items(
@@ -533,6 +541,8 @@ class CategoriaController extends Controller
                     'categoria' => $categoria,
                 ],
             ];
+
+            event(new atualizarCategoria($categoria));
 
             return response()->json($response, 200);
         } catch (\Illuminate\Validation\ValidationException $e) {

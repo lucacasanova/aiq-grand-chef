@@ -2,6 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\atualizarProduto;
+use App\Events\criarProduto;
+use App\Events\listarProduto;
 use App\Models\Produto;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -68,7 +71,7 @@ class ProdutoController extends Controller
      *                     @OA\Property(property="updated_at", type="string", format="date-time", example="2024-09-11T05:58:09.000000Z"),
      *                     @OA\Property(property="categoria", type="object",
      *                         @OA\Property(property="id", type="integer", example=1),
-     *                         @OA\Property(property="nome", type="string", example="Pizza"),
+     *                         @OA\Property(property="nome", type="string", example="Pizza 💜"),
      *                         @OA\Property(property="created_at", type="string", format="date-time", example="2024-09-11T05:58:09.000000Z"),
      *                         @OA\Property(property="updated_at", type="string", format="date-time", example="2024-09-11T05:58:09.000000Z")
      *                     )
@@ -140,6 +143,8 @@ class ProdutoController extends Controller
                 ]
             ];
 
+            event(new listarProduto($produtos->items()));
+
             return response()->json($response);
         } catch (\Exception $e) {
             // Log detalhado do erro
@@ -190,7 +195,11 @@ class ProdutoController extends Controller
      *                     @OA\Property(property="nome", type="string", example="Pizza de Strogonoff 😋"),
      *                     @OA\Property(property="preco", type="number", format="float", example=47.77),
      *                     @OA\Property(property="created_at", type="string", format="date-time", example="2024-09-11T05:58:09.000000Z"),
-     *                     @OA\Property(property="updated_at", type="string", format="date-time", example="2024-09-11T05:58:09.000000Z")
+     *                     @OA\Property(property="updated_at", type="string", format="date-time", example="2024-09-11T05:58:09.000000Z"),
+     *                     @OA\Property(property="categoria", type="object",
+     *                         @OA\Property(property="id", type="integer", example=1),
+     *                         @OA\Property(property="nome", type="string", example="Categoria Exemplo")
+     *                     )
      *                 )
      *             )
      *         )
@@ -267,6 +276,9 @@ class ProdutoController extends Controller
             $produto = Produto::create($validatedData);
             Cache::tags(['produtos'])->flush(); // Limpa o cache após criar um novo produto
 
+            // Carrega a categoria associada
+            $produto->load('categoria');
+
             // Preparar resposta
             $response = [
                 'sucesso' => true,
@@ -275,6 +287,8 @@ class ProdutoController extends Controller
                     'produto' => $produto,
                 ],
             ];
+
+            event(new criarProduto($produto));
 
             return response()->json($response, 201);
         } catch (\Exception $e) {
@@ -327,7 +341,7 @@ class ProdutoController extends Controller
      *                     @OA\Property(property="updated_at", type="string", format="date-time", example="2024-09-11T05:58:09.000000Z"),
      *                     @OA\Property(property="categoria", type="object",
      *                         @OA\Property(property="id", type="integer", example=1),
-     *                         @OA\Property(property="nome", type="string", example="Pizza"),
+     *                         @OA\Property(property="nome", type="string", example="Pizza 💜"),
      *                         @OA\Property(property="created_at", type="string", format="date-time", example="2024-09-11T05:58:09.000000Z"),
      *                         @OA\Property(property="updated_at", type="string", format="date-time", example="2024-09-11T05:58:09.000000Z")
      *                     ),
@@ -561,6 +575,8 @@ class ProdutoController extends Controller
                     'produto' => $produto,
                 ],
             ];
+
+            event(new atualizarProduto($produto));
 
             return response()->json($response, 200);
         } catch (\Exception $e) {
