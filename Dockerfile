@@ -24,9 +24,13 @@ RUN apt-get update && apt-get install -y \
     unzip \
     git \
     redis-tools \
-    postgresql-client \
-    && curl -sL https://deb.nodesource.com/setup_18.x | bash - \
-    && apt-get install -y nodejs
+    postgresql-client 
+
+
+# Adicionar Node.js 18 e npm
+RUN curl -sL https://deb.nodesource.com/setup_18.x | bash - \
+&& apt-get install -y nodejs
+
 
 # Instalar Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -52,6 +56,11 @@ RUN mkdir -p /var/www/.cache/composer \
 RUN mkdir -p /var/www/html/node_modules \
     && chown -R www-data:www-data /var/www/html/node_modules \
     && chmod -R 775 /var/www/html/node_modules
+
+# Ajustar permissões do diretório public/build
+RUN mkdir -p /var/www/html/public/build \
+    && chown -R www-data:www-data /var/www/html/public/build \
+    && chmod -R 775 /var/www/html/public/build
 
 # Copiar configuração do Nginx
 COPY nginx.conf /etc/nginx/conf.d/default.conf

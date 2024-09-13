@@ -31,6 +31,10 @@ composer install
 echo "Instalando dependências do npm..."
 npm install
 
+# Compilar assets do Vite
+echo "Compilando assets do Vite..."
+npm run build
+
 # Gerar chave de criptografia do Laravel
 echo "Gerando chave de criptografia do Laravel..."
 php artisan key:generate --force
