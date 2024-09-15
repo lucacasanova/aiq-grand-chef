@@ -6,6 +6,7 @@ use App\Events\atualizarPedido;
 use App\Events\criarPedido;
 use App\Events\listarPedido;
 use App\Models\Pedido;
+use App\Services\PedidoServiceInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -20,6 +21,13 @@ use OpenApi\Attributes as OA;
 
 class PedidoController extends Controller
 {
+    protected $pedidoService;
+
+    public function __construct(PedidoServiceInterface $pedidoService)
+    {
+        $this->pedidoService = $pedidoService;
+    }
+
     /**
      * @OA\Get(
      *     path="/pedidos",
@@ -115,52 +123,31 @@ class PedidoController extends Controller
      */
     public function index(Request $request)
     {
+        // Preparar resposta
+        $response = [
+            'sucesso' => false,
+            'mensagem_erro' => 'Erro desconhecido.',
+            'dados' => null,
+        ];
+
         $tentativas = 3;
         for ($i = 0; $i < $tentativas; $i++) {
             try {
-                // Validação de parâmetros
-                $itensPorPagina = $request->query('itens_por_pagina', 10);
-                $ordenarPor = $request->query('ordenar_por', 'id');
-                $ordem = $request->query('ordem', 'asc');
-                $pagina = $request->query('pagina', 1);
+                $pedidos = $this->pedidoService->listarPedidos($request);
 
-                // Tempo de cache em segundos
-                $cacheTempo = 60;
-
-                // Chave do cache
-                $cacheKey = 'pedidos_' . $itensPorPagina . '_' . $ordenarPor . '_' . $ordem . '_pagina_' . $pagina;
-
-                // Recupera pedidos do cache ou do banco de dados
-                $pedidos = Cache::tags(['pedidos'])->remember($cacheKey, $cacheTempo, function () use ($itensPorPagina, $ordenarPor, $ordem, $pagina) {
-                    return Pedido::with('produtos')->orderBy($ordenarPor, $ordem)->paginate($itensPorPagina, ['*'], 'page', $pagina);
-                });
-
-                // Ajustar os preços no pivot para float
-                $pedidos->each(function ($pedido) {
-                    $pedido->preco_total = (float) $pedido->preco_total;
-                    $pedido->produtos->each(function ($produto) {
-                        $produto->pivot->preco = (float) $produto->pivot->preco;
-                    });
-                });
-
-                // Preparar resposta
-                $response = [
-                    'sucesso' => true,
-                    'mensagem_erro' => null,
-                    'dados' => [
-                        'pedidos' => $pedidos->items(),
-                        'ultima_pagina' => $pedidos->lastPage(),
-                        'total_itens' => $pedidos->total(),
-                        'filtro' => [
-                            'itens_por_pagina' => $itensPorPagina,
-                            'ordenar_por' => $ordenarPor,
-                            'ordem' => $ordem,
-                            'pagina' => $pedidos->currentPage(),
-                        ],
+                $response['sucesso'] = true;
+                $response['mensagem_erro'] = null;
+                $response['dados'] = [
+                    'pedidos' => $pedidos->items(),
+                    'ultima_pagina' => $pedidos->lastPage(),
+                    'total_itens' => $pedidos->total(),
+                    'filtro' => [
+                        'itens_por_pagina' => $pedidos->perPage(),
+                        'ordenar_por' => $request->query('ordenar_por', 'id'),
+                        'ordem' =>  $request->query('ordem', 'asc'),
+                        'pagina' => $pedidos->currentPage(),
                     ],
                 ];
-
-                event(new listarPedido($pedidos->items()));
 
                 return response()->json($response);
             } catch (\Exception $e) {
@@ -175,16 +162,12 @@ class PedidoController extends Controller
 
                 // Se for a última tentativa, retornar o erro
                 if ($i === $tentativas - 1) {
-                    $response = [
-                        'sucesso' => false,
-                        'mensagem_erro' => 'Algo deu errado. Tente novamente mais tarde.',
-                        'dados' => null,
-                    ];
-
+                    $response['mensagem_erro'] = 'Algo deu errado. Tente novamente mais tarde.';
                     return response()->json($response, 500);
                 }
             }
         }
+        return response()->json($response, 500);
     }
 
     /**
@@ -273,80 +256,29 @@ class PedidoController extends Controller
      */
     public function store(Request $request)
     {
+        // Preparar resposta
+        $response = [
+            'sucesso' => false,
+            'mensagem_erro' => 'Erro desconhecido.',
+            'dados' => null,
+        ];
+
         $tentativas = 3;
         for ($i = 0; $i < $tentativas; $i++) {
             try {
-                // Validação dos dados da requisição
-                $validatedData = $request->validate([
-                    'produtos' => 'required|array',
-                    'produtos.*.produto_id' => 'required|integer|exists:produtos,id',
-                    'produtos.*.quantidade' => 'required|integer|min:1',
-                    'produtos.*.preco' => 'required|numeric|min:0',
-                ], [
-                    'produtos.required' => 'O campo produtos é obrigatório.',
-                    'produtos.array' => 'O campo produtos deve ser um array.',
-                    'produtos.*.produto_id.required' => 'O campo produto_id é obrigatório.',
-                    'produtos.*.produto_id.integer' => 'O campo produto_id deve ser um inteiro.',
-                    'produtos.*.produto_id.exists' => 'O produto especificado não existe.',
-                    'produtos.*.quantidade.required' => 'O campo quantidade é obrigatório.',
-                    'produtos.*.quantidade.integer' => 'O campo quantidade deve ser um inteiro.',
-                    'produtos.*.quantidade.min' => 'O campo quantidade deve ser no mínimo 1.',
-                    'produtos.*.preco.required' => 'O campo preco é obrigatório.',
-                    'produtos.*.preco.numeric' => 'O campo preco deve ser numérico.',
-                    'produtos.*.preco.min' => 'O campo preco deve ser no mínimo 0.',
-                ]);
+                $pedido = $this->pedidoService->criarPedido($request);
 
-                // Criar o pedido com estado padrão 'aberto'
-                $pedido = Pedido::create(['estado' => 'aberto']);
-                $precoTotal = 0;
-
-                // Adicionar produtos ao pedido e calcular o preço total
-                foreach ($validatedData['produtos'] as $produto) {
-                    $precoTotal += $produto['preco'] * $produto['quantidade'];
-                    $pedido->produtos()->attach($produto['produto_id'], [
-                        'quantidade' => $produto['quantidade'],
-                        'preco' => (float) $produto['preco'],
-                    ]);
-                }
-
-                // Atualizar o pedido com o preço total
-                $pedido->update(['preco_total' => $precoTotal]);
-
-                // Limpar o cache após criar um novo pedido
-                Cache::tags(['pedidos'])->flush();
-
-                // Carregar os produtos com o pivot ajustado
-                $pedido->load(['produtos' => function ($query) {
-                    $query->select('produtos.*', 'produto_pedido.preco as pivot_preco', 'produto_pedido.quantidade as pivot_quantidade')
-                        ->withPivot('preco', 'quantidade');
-                }]);
-
-                // Ajustar o preço no pivot para float
-                $pedido->produtos->each(function ($produto) {
-                    $produto->pivot->preco = (float) $produto->pivot->preco;
-                });
-
-                // Preparar resposta
-                $response = [
-                    'sucesso' => true,
-                    'mensagem_erro' => null,
-                    'dados' => [
-                        'pedido' => $pedido,
-                    ],
+                $response['sucesso'] = true;
+                $response['mensagem_erro'] = null;
+                $response['dados'] = [
+                    'pedido' => $pedido,
                 ];
-
-                event(new criarPedido($pedido));
 
                 return response()->json($response, 201);
             } catch (\Illuminate\Validation\ValidationException $e) {
                 // Resposta de erro de validação
                 $errors = collect($e->errors())->flatten()->first();
-                $response = [
-                    'sucesso' => false,
-                    'mensagem_erro' => is_array($errors) ? implode(', ', $errors) : $errors,
-                    'dados' => null,
-                ];
-
+                $response['mensagem_erro'] = is_array($errors) ? implode(', ', $errors) : $errors;
                 return response()->json($response, 422);
             } catch (\Exception $e) {
                 // Log detalhado do erro
@@ -360,16 +292,12 @@ class PedidoController extends Controller
 
                 // Se for a última tentativa, retornar o erro
                 if ($i === $tentativas - 1) {
-                    $response = [
-                        'sucesso' => false,
-                        'mensagem_erro' => 'Algo deu errado. Tente novamente mais tarde.',
-                        'dados' => null,
-                    ];
-
+                    $response['mensagem_erro'] = 'Algo deu errado. Tente novamente mais tarde.';
                     return response()->json($response, 500);
                 }
             }
         }
+        return response()->json($response, 500);
     }
 
     /**
@@ -450,44 +378,27 @@ class PedidoController extends Controller
      */
     public function show($id)
     {
+        // Preparar resposta
+        $response = [
+            'sucesso' => false,
+            'mensagem_erro' => 'Erro desconhecido.',
+            'dados' => null,
+        ];
+
         $tentativas = 3;
         for ($i = 0; $i < $tentativas; $i++) {
             try {
-                // Recupera o pedido pelo ID
-                $pedido = Pedido::find($id);
+                $pedido = $this->pedidoService->mostrarPedido($id);
 
-                // Verifica se o pedido foi encontrado
                 if (!$pedido) {
-                    $response = [
-                        'sucesso' => false,
-                        'mensagem_erro' => 'Pedido não encontrado.',
-                        'dados' => null,
-                    ];
-
+                    $response['mensagem_erro'] = 'Pedido não encontrado.';
                     return response()->json($response, 404);
                 }
 
-                // Chave do cache
-                $cacheKey = 'pedido_' . $pedido->id;
-
-                // Recupera o pedido do cache ou do banco de dados
-                $pedido = Cache::tags(['pedidos'])->remember($cacheKey, 60, function () use ($pedido) {
-                    return $pedido->load('produtos');
-                });
-
-                // Ajustar os preços no pivot e preco_total para float
-                $pedido->preco_total = (float) $pedido->preco_total;
-                $pedido->produtos->each(function ($produto) {
-                    $produto->pivot->preco = (float) $produto->pivot->preco;
-                });
-
-                // Preparar resposta
-                $response = [
-                    'sucesso' => true,
-                    'mensagem_erro' => null,
-                    'dados' => [
-                        'pedido' => $pedido,
-                    ],
+                $response['sucesso'] = true;
+                $response['mensagem_erro'] = null;
+                $response['dados'] = [
+                    'pedido' => $pedido,
                 ];
 
                 return response()->json($response, 200);
@@ -503,16 +414,12 @@ class PedidoController extends Controller
 
                 // Se for a última tentativa, retornar o erro
                 if ($i === $tentativas - 1) {
-                    $response = [
-                        'sucesso' => false,
-                        'mensagem_erro' => 'Algo deu errado. Tente novamente mais tarde.',
-                        'dados' => null,
-                    ];
-
+                    $response['mensagem_erro'] = 'Algo deu errado. Tente novamente mais tarde.';
                     return response()->json($response, 500);
                 }
             }
         }
+        return response()->json($response, 500);
     }
 
     /**
@@ -607,82 +514,42 @@ class PedidoController extends Controller
      */
     public function update(Request $request, $id)
     {
+        // Preparar resposta
+        $response = [
+            'sucesso' => false,
+            'mensagem_erro' => 'Erro desconhecido.',
+            'dados' => null,
+        ];
+
         $tentativas = 3;
         for ($i = 0; $i < $tentativas; $i++) {
             try {
-                // Recupera o pedido pelo ID
-                $pedido = Pedido::find($id);
+                $pedido = $this->pedidoService->atualizarPedido($request, $id);
 
-                // Verifica se o pedido foi encontrado
-                if (!$pedido) {
-                    $response = [
-                        'sucesso' => false,
-                        'mensagem_erro' => 'Pedido não encontrado.',
-                        'dados' => null,
-                    ];
+                // Verifica se houve erro na atualização
+                if ($pedido['sucesso'] === false) {
+                    $response['mensagem_erro'] = $pedido['mensagem_erro'];
+                    return response()->json($response, 422);
+                }
 
+                // Verifica se a pedido foi encontrada
+                if (!$pedido['pedido']) {
+                    $response['mensagem_erro'] = 'Pedido não encontrado.';
                     return response()->json($response, 404);
                 }
 
-                // Validação dos dados
-                $validatedData = $request->validate([
-                    'estado' => 'in:aprovado,concluido,cancelado',
-                ]);
-
-                // Verificar se o estado já está atualizado
-                if ($pedido->estado === $validatedData['estado']) {
-                    $response = [
-                        'sucesso' => false,
-                        'mensagem_erro' => 'O estado já está atualizado.',
-                        'dados' => null,
-                    ];
-
-                    return response()->json($response, 400);
-                }
-
-                // Validações adicionais
-                if ($pedido->estado === 'concluido' && $validatedData['estado'] === 'aprovado') {
-                    $response = [
-                        'sucesso' => false,
-                        'mensagem_erro' => 'Não é possível alterar um pedido concluído para aprovado.',
-                        'dados' => null,
-                    ];
-
-                    return response()->json($response, 400);
-                }
-
-                if ($pedido->estado === 'cancelado' && in_array($validatedData['estado'], ['aprovado', 'concluido'])) {
-                    $response = [
-                        'sucesso' => false,
-                        'mensagem_erro' => 'Não é possível alterar um pedido cancelado para outro estado.',
-                        'dados' => null,
-                    ];
-
-                    return response()->json($response, 400);
-                }
-
-                // Atualiza o estado do pedido
-                $pedido->update($validatedData);
-                Cache::tags(['pedidos'])->flush();
-
-                // Ajustar os preços no pivot e preco_total para float
-                $pedido->preco_total = (float) $pedido->preco_total;
-                $pedido->produtos->each(function ($produto) {
-                    $produto->pivot->preco = (float) $produto->pivot->preco;
-                });
-
-                // Preparar resposta
-                $response = [
-                    'sucesso' => true,
-                    'mensagem_erro' => null,
-                    'dados' => [
-                        'pedido' => $pedido,
-                    ],
+                $response['sucesso'] = true;
+                $response['mensagem_erro'] = null;
+                $response['dados'] = [
+                    'pedido' => $pedido['pedido'],
                 ];
 
-                event(new atualizarPedido($pedido));
-
                 return response()->json($response, 200);
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                // Resposta de erro de validação
+                $errors = collect($e->errors())->flatten()->first();
+                $response['mensagem_erro'] = is_array($errors) ? implode(', ', $errors) : $errors;
+                return response()->json($response, 422);
             } catch (\Exception $e) {
                 // Log detalhado do erro
                 Log::channel('apis')->error('Erro ao atualizar pedido', [
@@ -695,15 +562,11 @@ class PedidoController extends Controller
 
                 // Se for a última tentativa, retornar o erro
                 if ($i === $tentativas - 1) {
-                    $response = [
-                        'sucesso' => false,
-                        'mensagem_erro' => 'Algo deu errado. Tente novamente mais tarde.',
-                        'dados' => null,
-                    ];
-
+                    $response['mensagem_erro'] = 'Algo deu errado. Tente novamente mais tarde.';
                     return response()->json($response, 500);
                 }
             }
         }
+        return response()->json($response, 500);
     }
 }

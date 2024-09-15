@@ -2,13 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Events\atualizarCategoria;
-use App\Events\criarCategoria;
-use App\Events\listarCategoria;
-use App\Models\Categoria;
-use Illuminate\Broadcasting\Channel;
+use App\Services\CategoriaServiceInterface;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use OpenApi\Attributes as OA;
 
@@ -20,6 +15,13 @@ use OpenApi\Attributes as OA;
  */
 class CategoriaController extends Controller
 {
+    protected $categoriaService;
+
+    public function __construct(CategoriaServiceInterface $categoriaService)
+    {
+        $this->categoriaService = $categoriaService;
+    }
+
     /**
      * @OA\Get(
      *     path="/cardapio",
@@ -108,44 +110,31 @@ class CategoriaController extends Controller
      */
     public function index(Request $request)
     {
+        // Preparar resposta
+        $response = [
+            'sucesso' => false,
+            'mensagem_erro' => 'Erro desconhecido.',
+            'dados' => null,
+        ];
+
         $tentativas = 3;
         for ($i = 0; $i < $tentativas; $i++) {
             try {
-                // Validação de parâmetros
-                $itensPorPagina = (int) $request->query('itens_por_pagina', 10);
-                $ordenarPor = $request->query('ordenar_por', 'id');
-                $ordem = $request->query('ordem', 'asc');
-                $pagina = (int) $request->query('pagina', 1);
+                $categorias = $this->categoriaService->listarCategorias($request);
 
-                // Tempo de cache em segundos
-                $cacheTempo = 60;
-
-                // Chave do cache
-                $cacheKey = 'categorias_' . $itensPorPagina . '_' . $ordenarPor . '_' . $ordem . '_pagina_' . $pagina;
-
-                // Recupera categorias do cache ou do banco de dados
-                $categorias = Cache::tags(['categorias'])->remember($cacheKey, $cacheTempo, function () use ($itensPorPagina, $ordenarPor, $ordem, $pagina) {
-                    return Categoria::with(['produtos'])->orderBy($ordenarPor, $ordem)->paginate($itensPorPagina, ['*'], 'page', $pagina);
-                });
-
-                // Preparar resposta
-                $response = [
-                    'sucesso' => true,
-                    'mensagem_erro' => null,
-                    'dados' => [
-                        'categorias' => $categorias->items(),
-                        'ultima_pagina' => $categorias->lastPage(),
-                        'total_itens' => $categorias->total(),
-                        'filtro' => [
-                            'itens_por_pagina' => $itensPorPagina,
-                            'ordenar_por' => $ordenarPor,
-                            'ordem' => $ordem,
-                            'pagina' => $categorias->currentPage(),
-                        ],
+                $response['sucesso'] = true;
+                $response['mensagem_erro'] = null;
+                $response['dados'] = [
+                    'categorias' => $categorias->items(),
+                    'ultima_pagina' => $categorias->lastPage(),
+                    'total_itens' => $categorias->total(),
+                    'filtro' => [
+                        'itens_por_pagina' => $categorias->perPage(),
+                        'ordenar_por' => $request->query('ordenar_por', 'id'),
+                        'ordem' =>  $request->query('ordem', 'asc'),
+                        'pagina' => $categorias->currentPage(),
                     ],
                 ];
-
-                event(new listarCategoria($categorias->items()));
 
                 return response()->json($response);
             } catch (\Exception $e) {
@@ -160,17 +149,14 @@ class CategoriaController extends Controller
 
                 // Se for a última tentativa, retornar o erro
                 if ($i === $tentativas - 1) {
-                    $response = [
-                        'sucesso' => false,
-                        'mensagem_erro' => 'Algo deu errado. Tente novamente mais tarde.',
-                        'dados' => null,
-                    ];
-
+                    $response['mensagem_erro'] = 'Algo deu errado. Tente novamente mais tarde.';
                     return response()->json($response, 500);
                 }
             }
         }
+        return response()->json($response, 500);
     }
+
     /**
      * @OA\Post(
      *     path="/categorias",
@@ -238,46 +224,29 @@ class CategoriaController extends Controller
      */
     public function store(Request $request)
     {
+        // Preparar resposta
+        $response = [
+            'sucesso' => false,
+            'mensagem_erro' => 'Erro desconhecido.',
+            'dados' => null,
+        ];
+
         $tentativas = 3;
         for ($i = 0; $i < $tentativas; $i++) {
             try {
-                // Validação dos dados da requisição
-                $validatedData = $request->validate([
-                    'nome' => 'required|string|max:255|unique:categorias,nome',
-                ], [
-                    'nome.required' => 'O campo nome é obrigatório.',
-                    'nome.string' => 'O campo nome deve ser uma string.',
-                    'nome.max' => 'O campo nome não pode ter mais de 255 caracteres.',
-                    'nome.unique' => 'O nome da categoria já existe.',
-                ]);
+                $categoria = $this->categoriaService->criarCategoria($request);
 
-                // Criação da nova categoria
-                $categoria = Categoria::create($validatedData);
-
-                // Limpa o cache após criar uma nova categoria
-                Cache::tags(['categorias'])->flush();
-
-                // Preparar resposta
-                $response = [
-                    'sucesso' => true,
-                    'mensagem_erro' => null,
-                    'dados' => [
-                        'categoria' => $categoria,
-                    ],
+                $response['sucesso'] = true;
+                $response['mensagem_erro'] = null;
+                $response['dados'] = [
+                    'categoria' => $categoria,
                 ];
-
-                event(new criarCategoria($categoria));
 
                 return response()->json($response, 201);
             } catch (\Illuminate\Validation\ValidationException $e) {
                 // Resposta de erro de validação
                 $errors = collect($e->errors())->flatten()->first();
-                $response = [
-                    'sucesso' => false,
-                    'mensagem_erro' => is_array($errors) ? implode(', ', $errors) : $errors,
-                    'dados' => null,
-                ];
-
+                $response['mensagem_erro'] = is_array($errors) ? implode(', ', $errors) : $errors;
                 return response()->json($response, 422);
             } catch (\Exception $e) {
                 // Log detalhado do erro
@@ -291,16 +260,12 @@ class CategoriaController extends Controller
 
                 // Se for a última tentativa, retornar o erro
                 if ($i === $tentativas - 1) {
-                    $response = [
-                        'sucesso' => false,
-                        'mensagem_erro' => 'Algo deu errado. Tente novamente mais tarde.',
-                        'dados' => null,
-                    ];
-
+                    $response['mensagem_erro'] = 'Algo deu errado. Tente novamente mais tarde.';
                     return response()->json($response, 500);
                 }
             }
         }
+        return response()->json($response, 500);
     }
 
     /**
@@ -371,38 +336,27 @@ class CategoriaController extends Controller
      */
     public function show($id)
     {
+        // Preparar resposta
+        $response = [
+            'sucesso' => false,
+            'mensagem_erro' => 'Erro desconhecido.',
+            'dados' => null,
+        ];
+
         $tentativas = 3;
         for ($i = 0; $i < $tentativas; $i++) {
             try {
-                // Recupera a categoria com seus produtos associados
-                $categoria = Categoria::with(['produtos'])->find($id);
+                $categoria = $this->categoriaService->mostrarCategoria($id);
 
-                // Verifica se a categoria foi encontrada
                 if (!$categoria) {
-                    $response = [
-                        'sucesso' => false,
-                        'mensagem_erro' => 'Categoria não encontrada',
-                        'dados' => null,
-                    ];
-
+                    $response['mensagem_erro'] = 'Categoria não encontrada.';
                     return response()->json($response, 404);
                 }
 
-                // Chave do cache
-                $cacheKey = 'categoria_' . $categoria->id;
-
-                // Recupera a categoria do cache ou do banco de dados
-                $categoria = Cache::tags(['categorias'])->remember($cacheKey, 60, function () use ($categoria) {
-                    return $categoria;
-                });
-
-                // Preparar resposta
-                $response = [
-                    'sucesso' => true,
-                    'mensagem_erro' => null,
-                    'dados' => [
-                        'categoria' => $categoria,
-                    ],
+                $response['sucesso'] = true;
+                $response['mensagem_erro'] = null;
+                $response['dados'] = [
+                    'categoria' => $categoria,
                 ];
 
                 return response()->json($response, 200);
@@ -418,16 +372,12 @@ class CategoriaController extends Controller
 
                 // Se for a última tentativa, retornar o erro
                 if ($i === $tentativas - 1) {
-                    $response = [
-                        'sucesso' => false,
-                        'mensagem_erro' => 'Algo deu errado. Tente novamente mais tarde.',
-                        'dados' => null,
-                    ];
-
+                    $response['mensagem_erro'] = 'Algo deu errado. Tente novamente mais tarde.';
                     return response()->json($response, 500);
                 }
             }
         }
+        return response()->json($response, 500);
     }
 
     /**
@@ -520,59 +470,35 @@ class CategoriaController extends Controller
      */
     public function update(Request $request, $id)
     {
+        // Preparar resposta
+        $response = [
+            'sucesso' => false,
+            'mensagem_erro' => 'Erro desconhecido.',
+            'dados' => null,
+        ];
+
         $tentativas = 3;
         for ($i = 0; $i < $tentativas; $i++) {
             try {
-                // Recupera a categoria com seus produtos associados
-                $categoria = Categoria::with(['produtos'])->find($id);
+                $categoria = $this->categoriaService->atualizarCategoria($request, $id);
 
                 // Verifica se a categoria foi encontrada
                 if (!$categoria) {
-                    $response = [
-                        'sucesso' => false,
-                        'mensagem_erro' => 'Categoria não encontrada.',
-                        'dados' => null,
-                    ];
-
+                    $response['mensagem_erro'] = 'Categoria não encontrada.';
                     return response()->json($response, 404);
                 }
 
-                // Validação dos dados
-                $validatedData = $request->validate([
-                    'nome' => 'string|max:255',
-                ], [
-                    'nome.string' => 'O campo nome deve ser uma string.',
-                    'nome.max' => 'O campo nome não pode ter mais de 255 caracteres.',
-                ]);
-
-                // Atualiza a categoria
-                $categoria->update($validatedData);
-
-                // Chave do cache
-                $cacheKey = 'categoria_' . $categoria->id;
-                Cache::tags(['categorias'])->put($cacheKey, $categoria, 60);
-
-                // Preparar resposta
-                $response = [
-                    'sucesso' => true,
-                    'mensagem_erro' => null,
-                    'dados' => [
-                        'categoria' => $categoria,
-                    ],
+                $response['sucesso'] = true;
+                $response['mensagem_erro'] = null;
+                $response['dados'] = [
+                    'categoria' => $categoria,
                 ];
-
-                event(new atualizarCategoria($categoria));
 
                 return response()->json($response, 200);
             } catch (\Illuminate\Validation\ValidationException $e) {
                 // Resposta de erro de validação
                 $errors = collect($e->errors())->flatten()->first();
-                $response = [
-                    'sucesso' => false,
-                    'mensagem_erro' => is_array($errors) ? implode(', ', $errors) : $errors,
-                    'dados' => null,
-                ];
-
+                $response['mensagem_erro'] = is_array($errors) ? implode(', ', $errors) : $errors;
                 return response()->json($response, 422);
             } catch (\Exception $e) {
                 // Log detalhado do erro
@@ -586,16 +512,12 @@ class CategoriaController extends Controller
 
                 // Se for a última tentativa, retornar o erro
                 if ($i === $tentativas - 1) {
-                    $response = [
-                        'sucesso' => false,
-                        'mensagem_erro' => 'Algo deu errado. Tente novamente mais tarde.',
-                        'dados' => null,
-                    ];
-
+                    $response['mensagem_erro'] = 'Algo deu errado. Tente novamente mais tarde.';
                     return response()->json($response, 500);
                 }
             }
         }
+        return response()->json($response, 500);
     }
 
 
@@ -656,40 +578,26 @@ class CategoriaController extends Controller
      */
     public function destroy($id)
     {
+        // Preparar resposta
+        $response = [
+            'sucesso' => false,
+            'mensagem_erro' => 'Erro desconhecido.',
+            'dados' => null,
+        ];
+
         $tentativas = 3;
         for ($i = 0; $i < $tentativas; $i++) {
             try {
-                // Recupera a categoria pelo ID
-                $categoria = Categoria::find($id);
+                $categoria = $this->categoriaService->deletarCategoria($id);
 
                 // Verifica se a categoria foi encontrada
-                if (!$categoria) {
-                    $response = [
-                        'sucesso' => false,
-                        'mensagem_erro' => 'Categoria não encontrada.',
-                        'dados' => null,
-                    ];
-
+                if ($categoria['sucesso'] === false && $categoria['mensagem_erro'] === 'Categoria não encontrada.') {
+                    $response['mensagem_erro'] = $categoria['mensagem_erro'];
                     return response()->json($response, 404);
-                }
-
-                // Verificar se a categoria tem vínculos
-                if ($categoria->produtos()->exists()) {
-                    $response = [
-                        'sucesso' => false,
-                        'mensagem_erro' => 'Categoria possui vínculos e não pode ser deletada.',
-                        'dados' => null,
-                    ];
-
+                } elseif ($categoria['sucesso'] === false) {
+                    $response['mensagem_erro'] = $categoria['mensagem_erro'];
                     return response()->json($response, 400);
                 }
-
-                // Deleta a categoria
-                $categoria->delete();
-
-                // Remove a categoria do cache
-                $cacheKey = 'categoria_' . $categoria->id;
-                Cache::tags(['categorias'])->forget($cacheKey);
 
                 return response()->json(null, 204);
             } catch (\Exception $e) {
@@ -704,15 +612,11 @@ class CategoriaController extends Controller
 
                 // Se for a última tentativa, retornar o erro
                 if ($i === $tentativas - 1) {
-                    $response = [
-                        'sucesso' => false,
-                        'mensagem_erro' => 'Algo deu errado. Tente novamente mais tarde.',
-                        'dados' => null,
-                    ];
-
+                    $response['mensagem_erro'] = 'Algo deu errado. Tente novamente mais tarde.';
                     return response()->json($response, 500);
                 }
             }
         }
+        return response()->json($response, 500);
     }
 }

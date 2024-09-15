@@ -6,6 +6,7 @@ use App\Events\atualizarProduto;
 use App\Events\criarProduto;
 use App\Events\listarProduto;
 use App\Models\Produto;
+use App\Services\ProdutoServiceInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -20,6 +21,13 @@ use OpenApi\Attributes as OA;
 
 class ProdutoController extends Controller
 {
+    protected $produtoService;
+
+    public function __construct(ProdutoServiceInterface $produtoService)
+    {
+        $this->produtoService = $produtoService;
+    }
+
     /**
      * @OA\Get(
      *     path="/produtos",
@@ -108,44 +116,31 @@ class ProdutoController extends Controller
      */
     public function index(Request $request)
     {
+        // Preparar resposta
+        $response = [
+            'sucesso' => false,
+            'mensagem_erro' => 'Erro desconhecido.',
+            'dados' => null,
+        ];
+
         $tentativas = 3;
         for ($i = 0; $i < $tentativas; $i++) {
             try {
-                // Validação de parâmetros
-                $itensPorPagina = $request->query('itens_por_pagina', 10);
-                $ordenarPor = $request->query('ordenar_por', 'id');
-                $ordem = $request->query('ordem', 'asc');
-                $pagina = $request->query('pagina', 1);
+                $produtos = $this->produtoService->listarProdutos($request);
 
-                // Tempo de cache em segundos
-                $cacheTempo = 60;
-
-                // Chave do cache
-                $cacheKey = 'produtos_' . $itensPorPagina . '_' . $ordenarPor . '_' . $ordem . '_pagina_' . $pagina;
-
-                // Recupera produtos do cache ou do banco de dados
-                $produtos = Cache::tags(['produtos'])->remember($cacheKey, $cacheTempo, function () use ($itensPorPagina, $ordenarPor, $ordem, $pagina) {
-                    return Produto::with('categoria')->orderBy($ordenarPor, $ordem)->paginate($itensPorPagina, ['*'], 'page', $pagina);
-                });
-
-                // Preparar resposta
-                $response = [
-                    'sucesso' => true,
-                    'mensagem_erro' => null,
-                    'dados' => [
-                        'produtos' => $produtos->items(),
-                        'ultima_pagina' => $produtos->lastPage(),
-                        'total_itens' => $produtos->total(),
-                        'filtro' => [
-                            'itens_por_pagina' => $itensPorPagina,
-                            'ordenar_por' => $ordenarPor,
-                            'ordem' => $ordem,
-                            'pagina' => $produtos->currentPage(),
-                        ],
-                    ]
+                $response['sucesso'] = true;
+                $response['mensagem_erro'] = null;
+                $response['dados'] = [
+                    'produtos' => $produtos->items(),
+                    'ultima_pagina' => $produtos->lastPage(),
+                    'total_itens' => $produtos->total(),
+                    'filtro' => [
+                        'itens_por_pagina' => $produtos->perPage(),
+                        'ordenar_por' => $request->query('ordenar_por', 'id'),
+                        'ordem' =>  $request->query('ordem', 'asc'),
+                        'pagina' => $produtos->currentPage(),
+                    ],
                 ];
-
-                event(new listarProduto($produtos->items()));
 
                 return response()->json($response);
             } catch (\Exception $e) {
@@ -160,16 +155,12 @@ class ProdutoController extends Controller
 
                 // Se for a última tentativa, retornar o erro
                 if ($i === $tentativas - 1) {
-                    $response = [
-                        'sucesso' => false,
-                        'mensagem_erro' => 'Algo deu errado. Tente novamente mais tarde.',
-                        'dados' => null,
-                    ];
-
+                    $response['mensagem_erro'] = 'Algo deu errado. Tente novamente mais tarde.';
                     return response()->json($response, 500);
                 }
             }
         }
+        return response()->json($response, 500);
     }
 
     /**
@@ -248,57 +239,30 @@ class ProdutoController extends Controller
      */
     public function store(Request $request)
     {
+        // Preparar resposta
+        $response = [
+            'sucesso' => false,
+            'mensagem_erro' => 'Erro desconhecido.',
+            'dados' => null,
+        ];
+
         $tentativas = 3;
         for ($i = 0; $i < $tentativas; $i++) {
             try {
-                try {
-                    // Validação dos dados da requisição
-                    $validatedData = $request->validate([
-                        'categoria_id' => 'required|integer|exists:categorias,id',
-                        'nome' => 'required|string|max:255|unique:produtos,nome',
-                        'preco' => 'required|numeric',
-                    ], [
-                        'categoria_id.required' => 'O campo categoria_id é obrigatório.',
-                        'categoria_id.integer' => 'O campo categoria_id deve ser um inteiro.',
-                        'categoria_id.exists' => 'A categoria especificada não existe.',
-                        'nome.required' => 'O campo nome é obrigatório.',
-                        'nome.string' => 'O campo nome deve ser uma string.',
-                        'nome.max' => 'O campo nome não pode ter mais de 255 caracteres.',
-                        'nome.unique' => 'O nome do produto já existe.',
-                        'preco.required' => 'O campo preco é obrigatório.',
-                        'preco.numeric' => 'O campo preco deve ser um número.',
-                    ]);
-                } catch (\Illuminate\Validation\ValidationException $e) {
-                    // Resposta de erro de validação
-                    $errors = collect($e->errors())->flatten()->first();
-                    $response = [
-                        'sucesso' => false,
-                        'mensagem_erro' => is_array($errors) ? implode(', ', $errors) : $errors,
-                        'dados' => null,
-                    ];
+                $produto = $this->produtoService->criarProduto($request);
 
-                    return response()->json($response, 422);
-                }
-
-                // Cria o produto
-                $produto = Produto::create($validatedData);
-                Cache::tags(['produtos'])->flush(); // Limpa o cache após criar um novo produto
-
-                // Carrega a categoria associada
-                $produto->load('categoria');
-
-                // Preparar resposta
-                $response = [
-                    'sucesso' => true,
-                    'mensagem_erro' => null,
-                    'dados' => [
-                        'produto' => $produto,
-                    ],
+                $response['sucesso'] = true;
+                $response['mensagem_erro'] = null;
+                $response['dados'] = [
+                    'produto' => $produto,
                 ];
 
-                event(new criarProduto($produto));
-
                 return response()->json($response, 201);
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                // Resposta de erro de validação
+                $errors = collect($e->errors())->flatten()->first();
+                $response['mensagem_erro'] = is_array($errors) ? implode(', ', $errors) : $errors;
+                return response()->json($response, 422);
             } catch (\Exception $e) {
                 // Log detalhado do erro
                 Log::channel('apis')->error('Erro ao criar produto', [
@@ -311,16 +275,12 @@ class ProdutoController extends Controller
 
                 // Se for a última tentativa, retornar o erro
                 if ($i === $tentativas - 1) {
-                    $response = [
-                        'sucesso' => false,
-                        'mensagem_erro' => 'Algo deu errado. Tente novamente mais tarde.',
-                        'dados' => null,
-                    ];
-
+                    $response['mensagem_erro'] = 'Algo deu errado. Tente novamente mais tarde.';
                     return response()->json($response, 500);
                 }
             }
         }
+        return response()->json($response, 500);
     }
 
     /**
@@ -398,38 +358,27 @@ class ProdutoController extends Controller
      */
     public function show($id)
     {
+        // Preparar resposta
+        $response = [
+            'sucesso' => false,
+            'mensagem_erro' => 'Erro desconhecido.',
+            'dados' => null,
+        ];
+
         $tentativas = 3;
         for ($i = 0; $i < $tentativas; $i++) {
             try {
-                // Recupera o produto pelo ID com suas relações
-                $produto = Produto::with(['categoria', 'pedidos'])->find($id);
+                $produto = $this->produtoService->mostrarProduto($id);
 
-                // Verifica se o produto foi encontrado
                 if (!$produto) {
-                    $response = [
-                        'sucesso' => false,
-                        'mensagem_erro' => 'Produto não encontrado.',
-                        'dados' => null,
-                    ];
-
+                    $response['mensagem_erro'] = 'Produto não encontrado.';
                     return response()->json($response, 404);
                 }
 
-                // Chave do cache
-                $cacheKey = 'produto_' . $produto->id;
-
-                // Recupera o produto do cache ou do banco de dados
-                $produto = Cache::tags(['produtos'])->remember($cacheKey, 60, function () use ($produto) {
-                    return $produto;
-                });
-
-                // Preparar resposta
-                $response = [
-                    'sucesso' => true,
-                    'mensagem_erro' => null,
-                    'dados' => [
-                        'produto' => $produto,
-                    ],
+                $response['sucesso'] = true;
+                $response['mensagem_erro'] = null;
+                $response['dados'] = [
+                    'produto' => $produto,
                 ];
 
                 return response()->json($response, 200);
@@ -445,16 +394,12 @@ class ProdutoController extends Controller
 
                 // Se for a última tentativa, retornar o erro
                 if ($i === $tentativas - 1) {
-                    $response = [
-                        'sucesso' => false,
-                        'mensagem_erro' => 'Algo deu errado. Tente novamente mais tarde.',
-                        'dados' => null,
-                    ];
-
+                    $response['mensagem_erro'] = 'Algo deu errado. Tente novamente mais tarde.';
                     return response()->json($response, 500);
                 }
             }
         }
+        return response()->json($response, 500);
     }
 
     /**
@@ -487,7 +432,27 @@ class ProdutoController extends Controller
      *             @OA\Property(property="sucesso", type="boolean", example=true),
      *             @OA\Property(property="mensagem_erro", type="null", nullable=true, example=null),
      *             @OA\Property(property="dados", type="object",
-     *                 @OA\Property(property="produto", ref="#/components/schemas/Produto")
+     *                 @OA\Property(property="produto", type="object",
+     *                     @OA\Property(property="id", type="integer", example=2),
+     *                     @OA\Property(property="categoria_id", type="integer", example=1),
+     *                     @OA\Property(property="nome", type="string", example="Novo Nome do Produto"),
+     *                     @OA\Property(property="preco", type="number", format="float", example=47.77),
+     *                     @OA\Property(property="created_at", type="string", format="date-time", example="2024-09-15T05:10:44.000000Z"),
+     *                     @OA\Property(property="updated_at", type="string", format="date-time", example="2024-09-15T05:11:45.000000Z"),
+     *                     @OA\Property(property="categoria", type="object",
+     *                         @OA\Property(property="id", type="integer", example=1),
+     *                         @OA\Property(property="nome", type="string", example="Pizza 💜"),
+     *                         @OA\Property(property="created_at", type="string", format="date-time", example="2024-09-13T11:49:24.000000Z"),
+     *                         @OA\Property(property="updated_at", type="string", format="date-time", example="2024-09-13T11:49:24.000000Z")
+     *                     ),
+     *                     @OA\Property(property="pedidos", type="array", @OA\Items(type="object",
+     *                         @OA\Property(property="id", type="integer", example=1),
+     *                         @OA\Property(property="produto_id", type="integer", example=1),
+     *                         @OA\Property(property="quantidade", type="integer", example=2),
+     *                         @OA\Property(property="created_at", type="string", format="date-time", example="2024-09-11T05:58:09.000000Z"),
+     *                         @OA\Property(property="updated_at", type="string", format="date-time", example="2024-09-11T05:58:09.000000Z")
+     *                     ))
+     *                 )
      *             )
      *         )
      *     ),
@@ -538,67 +503,36 @@ class ProdutoController extends Controller
      */
     public function update(Request $request, $id)
     {
+        // Preparar resposta
+        $response = [
+            'sucesso' => false,
+            'mensagem_erro' => 'Erro desconhecido.',
+            'dados' => null,
+        ];
+
         $tentativas = 3;
         for ($i = 0; $i < $tentativas; $i++) {
             try {
-                // Recupera o produto pelo ID
-                $produto = Produto::find($id);
+                $produto = $this->produtoService->atualizarProduto($request, $id);
 
                 // Verifica se o produto foi encontrado
                 if (!$produto) {
-                    $response = [
-                        'sucesso' => false,
-                        'mensagem_erro' => 'Produto não encontrado.',
-                        'dados' => null,
-                    ];
-
+                    $response['mensagem_erro'] = 'Produto não encontrado.';
                     return response()->json($response, 404);
                 }
 
-                try {
-                    // Validação dos dados da requisição
-                    $validatedData = $request->validate([
-                        'categoria_id' => 'integer|exists:categorias,id',
-                        'nome' => 'string|max:255',
-                        'preco' => 'numeric',
-                    ], [
-                        'categoria_id.integer' => 'O campo categoria_id deve ser um inteiro.',
-                        'categoria_id.exists' => 'A categoria especificada não existe.',
-                        'nome.string' => 'O campo nome deve ser uma string.',
-                        'nome.max' => 'O campo nome não pode ter mais de 255 caracteres.',
-                        'preco.numeric' => 'O campo preco deve ser um número.',
-                    ]);
-                } catch (\Illuminate\Validation\ValidationException $e) {
-                    // Resposta de erro de validação
-                    $errors = collect($e->errors())->flatten()->first();
-                    $response = [
-                        'sucesso' => false,
-                        'mensagem_erro' => is_array($errors) ? implode(', ', $errors) : $errors,
-                        'dados' => null,
-                    ];
-
-                    return response()->json($response, 422);
-                }
-
-                // Atualiza o produto
-                $produto->update($validatedData);
-
-                // Atualiza o cache do produto
-                $cacheKey = 'produto_' . $produto->id;
-                Cache::tags(['produtos'])->put($cacheKey, $produto, 60);
-
-                // Preparar resposta
-                $response = [
-                    'sucesso' => true,
-                    'mensagem_erro' => null,
-                    'dados' => [
-                        'produto' => $produto,
-                    ],
+                $response['sucesso'] = true;
+                $response['mensagem_erro'] = null;
+                $response['dados'] = [
+                    'produto' => $produto,
                 ];
 
-                event(new atualizarProduto($produto));
-
                 return response()->json($response, 200);
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                // Resposta de erro de validação
+                $errors = collect($e->errors())->flatten()->first();
+                $response['mensagem_erro'] = is_array($errors) ? implode(', ', $errors) : $errors;
+                return response()->json($response, 422);
             } catch (\Exception $e) {
                 // Log detalhado do erro
                 Log::channel('apis')->error('Erro ao atualizar produto', [
@@ -611,16 +545,12 @@ class ProdutoController extends Controller
 
                 // Se for a última tentativa, retornar o erro
                 if ($i === $tentativas - 1) {
-                    $response = [
-                        'sucesso' => false,
-                        'mensagem_erro' => 'Algo deu errado. Tente novamente mais tarde.',
-                        'dados' => null,
-                    ];
-
+                    $response['mensagem_erro'] = 'Algo deu errado. Tente novamente mais tarde.';
                     return response()->json($response, 500);
                 }
             }
         }
+        return response()->json($response, 500);
     }
 
     /**
@@ -680,40 +610,26 @@ class ProdutoController extends Controller
      */
     public function destroy($id)
     {
+        // Preparar resposta
+        $response = [
+            'sucesso' => false,
+            'mensagem_erro' => 'Erro desconhecido.',
+            'dados' => null,
+        ];
+
         $tentativas = 3;
         for ($i = 0; $i < $tentativas; $i++) {
             try {
-                // Recupera o produto pelo ID
-                $produto = Produto::find($id);
+                $produto = $this->produtoService->deletarProduto($id);
 
                 // Verifica se o produto foi encontrado
-                if (!$produto) {
-                    $response = [
-                        'sucesso' => false,
-                        'mensagem_erro' => 'Produto não encontrado.',
-                        'dados' => null,
-                    ];
-
+                if ($produto['sucesso'] === false && $produto['mensagem_erro'] === 'Produto não encontrado.') {
+                    $response['mensagem_erro'] = $produto['mensagem_erro'];
                     return response()->json($response, 404);
-                }
-
-                // Verificar se o produto tem vínculos
-                if ($produto->pedidos()->exists()) {
-                    $response = [
-                        'sucesso' => false,
-                        'mensagem_erro' => 'Produto possui vínculos e não pode ser deletado.',
-                        'dados' => null,
-                    ];
-
+                } elseif ($produto['sucesso'] === false) {
+                    $response['mensagem_erro'] = $produto['mensagem_erro'];
                     return response()->json($response, 400);
                 }
-
-                // Deleta o produto
-                $produto->delete();
-
-                // Remove o cache do produto
-                $cacheKey = 'produto_' . $produto->id;
-                Cache::tags(['produtos'])->forget($cacheKey);
 
                 return response()->json(null, 204);
             } catch (\Exception $e) {
@@ -728,15 +644,11 @@ class ProdutoController extends Controller
 
                 // Se for a última tentativa, retornar o erro
                 if ($i === $tentativas - 1) {
-                    $response = [
-                        'sucesso' => false,
-                        'mensagem_erro' => 'Algo deu errado. Tente novamente mais tarde.',
-                        'dados' => null,
-                    ];
-
+                    $response['mensagem_erro'] = 'Algo deu errado. Tente novamente mais tarde.';
                     return response()->json($response, 500);
                 }
             }
         }
+        return response()->json($response, 500);
     }
 }
