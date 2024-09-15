@@ -4,14 +4,14 @@ Bem-vindo ao Teste Aiq Grand Chef Laravel! 🎉 Este projeto é uma API para ger
 
 ## Tecnologias Utilizadas
 
-- **Docker**: Execução e gerenciamento de contêineres.
-- **Nginx**: Servidor web utilizado para servir a aplicação.
-- **PHP-FPM 8.3**: Gerenciador de processos FastCGI para PHP.
-- **Laravel 11**: Framework PHP utilizado para desenvolver a aplicação.
-- **Swagger/OpenAPI**: Ferramenta para documentação da API.
-- **Redis**: Armazenamento de dados em memória utilizado para cache.
-- **WebSocket**: Protocolo utilizado para comunicação em tempo real entre o backend e o frontend.
-- **PostgreSQL**: Banco de dados relacional utilizado para armazenar dados da aplicação.
+-   **Docker**: Execução e gerenciamento de contêineres.
+-   **Nginx**: Servidor web utilizado para servir a aplicação.
+-   **PHP-FPM 8.3**: Gerenciador de processos FastCGI para PHP.
+-   **Laravel 11**: Framework PHP utilizado para desenvolver a aplicação.
+-   **Swagger/OpenAPI**: Ferramenta para documentação da API.
+-   **Redis**: Armazenamento de dados em memória utilizado para cache.
+-   **WebSocket**: Protocolo utilizado para comunicação em tempo real entre o backend e o frontend.
+-   **PostgreSQL**: Banco de dados relacional utilizado para armazenar dados da aplicação.
 
 ## Pré-requisitos
 
@@ -39,17 +39,18 @@ Certifique-se de ter o Docker e o Docker Compose instalados em sua máquina.
 
 ## Estrutura de Arquivos
 
-- `docker-compose.yml`: Arquivo de configuração do Docker Compose.
-- `nginx.conf`: Configuração do Nginx.
-- `php.ini`: Configuração do PHP.
-- `www.conf`: Configuração do PHP-FPM.
-- `entrypoint.sh`: Script de entrada para inicialização dos serviços.
+-   `docker-compose.yml`: Arquivo de configuração do Docker Compose.
+-   `nginx.conf`: Configuração do Nginx.
+-   `php.ini`: Configuração do PHP.
+-   `www.conf`: Configuração do PHP-FPM.
+-   `entrypoint.sh`: Script de entrada para inicialização dos serviços.
 
 ## Executando a Aplicação
 
 Após seguir os passos de configuração, a aplicação estará disponível em `http://localhost:8000`.
 
 ## Aah, esse backend utiliza websocket para manter o frontend sempre atualizado.
+
 ## Acesse [http://localhost:8000/](http://localhost:8000/) em uma segunda aba para ver as atualizações conforme os testes 💜
 
 ## Documentação da API
@@ -102,3 +103,11 @@ O cache é utilizado para melhorar a performance da aplicação, armazenando os 
 6. **Invalidação do Cache**: O cache é invalidado automaticamente após a criação, atualização ou exclusão de uma categoria, produto ou pedido, garantindo que os dados armazenados estejam sempre atualizados.
 
 Essas práticas garantem uma resposta rápida para consultas frequentes, melhorando a experiência do usuário e reduzindo a carga no banco de dados.
+
+## Branch v2
+
+A versão 2 foi criada após a entrega do projeto no dia 12/09.
+
+### Atualizações:
+- Implementação de novas tentativas de processamento em caso de erro interno.
+- Refatoração do código para aplicar os padrões de design (Repository e Services).
