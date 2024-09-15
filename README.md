@@ -107,3 +107,7 @@ Essas práticas garantem uma resposta rápida para consultas frequentes, melhora
 ## Branch v2
 
 A versão 2 foi criada após a entrega do projeto no dia 12/09.
+
+### Atualizações:
+- Implementação de novas tentativas de processamento em caso de erro interno.
+- Refatoração do código para aplicar os padrões de design (Repository e Services).
