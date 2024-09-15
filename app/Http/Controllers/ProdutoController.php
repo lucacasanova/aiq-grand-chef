@@ -108,61 +108,67 @@ class ProdutoController extends Controller
      */
     public function index(Request $request)
     {
-        try {
-            // Validação de parâmetros
-            $itensPorPagina = $request->query('itens_por_pagina', 10);
-            $ordenarPor = $request->query('ordenar_por', 'id');
-            $ordem = $request->query('ordem', 'asc');
-            $pagina = $request->query('pagina', 1);
+        $tentativas = 3;
+        for ($i = 0; $i < $tentativas; $i++) {
+            try {
+                // Validação de parâmetros
+                $itensPorPagina = $request->query('itens_por_pagina', 10);
+                $ordenarPor = $request->query('ordenar_por', 'id');
+                $ordem = $request->query('ordem', 'asc');
+                $pagina = $request->query('pagina', 1);
 
-            // Tempo de cache em segundos
-            $cacheTempo = 60;
+                // Tempo de cache em segundos
+                $cacheTempo = 60;
 
-            // Chave do cache
-            $cacheKey = 'produtos_' . $itensPorPagina . '_' . $ordenarPor . '_' . $ordem . '_pagina_' . $pagina;
+                // Chave do cache
+                $cacheKey = 'produtos_' . $itensPorPagina . '_' . $ordenarPor . '_' . $ordem . '_pagina_' . $pagina;
 
-            // Recupera produtos do cache ou do banco de dados
-            $produtos = Cache::tags(['produtos'])->remember($cacheKey, $cacheTempo, function () use ($itensPorPagina, $ordenarPor, $ordem, $pagina) {
-                return Produto::with('categoria')->orderBy($ordenarPor, $ordem)->paginate($itensPorPagina, ['*'], 'page', $pagina);
-            });
+                // Recupera produtos do cache ou do banco de dados
+                $produtos = Cache::tags(['produtos'])->remember($cacheKey, $cacheTempo, function () use ($itensPorPagina, $ordenarPor, $ordem, $pagina) {
+                    return Produto::with('categoria')->orderBy($ordenarPor, $ordem)->paginate($itensPorPagina, ['*'], 'page', $pagina);
+                });
 
-            // Preparar resposta
-            $response = [
-                'sucesso' => true,
-                'mensagem_erro' => null,
-                'dados' => [
-                    'produtos' => $produtos->items(),
-                    'ultima_pagina' => $produtos->lastPage(),
-                    'total_itens' => $produtos->total(),
-                    'filtro' => [
-                        'itens_por_pagina' => $itensPorPagina,
-                        'ordenar_por' => $ordenarPor,
-                        'ordem' => $ordem,
-                        'pagina' => $produtos->currentPage(),
-                    ],
-                ]
-            ];
+                // Preparar resposta
+                $response = [
+                    'sucesso' => true,
+                    'mensagem_erro' => null,
+                    'dados' => [
+                        'produtos' => $produtos->items(),
+                        'ultima_pagina' => $produtos->lastPage(),
+                        'total_itens' => $produtos->total(),
+                        'filtro' => [
+                            'itens_por_pagina' => $itensPorPagina,
+                            'ordenar_por' => $ordenarPor,
+                            'ordem' => $ordem,
+                            'pagina' => $produtos->currentPage(),
+                        ],
+                    ]
+                ];
 
-            event(new listarProduto($produtos->items()));
+                event(new listarProduto($produtos->items()));
 
-            return response()->json($response);
-        } catch (\Exception $e) {
-            // Log detalhado do erro
-            Log::channel('apis')->error('Erro ao listar produtos', [
-                'mensagem' => $e->getMessage(),
-                'arquivo' => $e->getFile(),
-                'linha' => $e->getLine(),
-                'trace' => $e->getTraceAsString(),
-            ]);
+                return response()->json($response);
+            } catch (\Exception $e) {
+                // Log detalhado do erro
+                Log::channel('apis')->error('Erro ao listar produtos', [
+                    'mensagem' => $e->getMessage(),
+                    'arquivo' => $e->getFile(),
+                    'linha' => $e->getLine(),
+                    'trace' => $e->getTraceAsString(),
+                    'tentativa' => ($i + 1),
+                ]);
 
-            // Resposta de erro
-            $response = [
-                'sucesso' => false,
-                'mensagem_erro' => 'Algo deu errado. Tente novamente mais tarde.',
-                'dados' => null,
-            ];
+                // Se for a última tentativa, retornar o erro
+                if ($i === $tentativas - 1) {
+                    $response = [
+                        'sucesso' => false,
+                        'mensagem_erro' => 'Algo deu errado. Tente novamente mais tarde.',
+                        'dados' => null,
+                    ];
 
-            return response()->json($response, 500);
+                    return response()->json($response, 500);
+                }
+            }
         }
     }
 
@@ -242,72 +248,78 @@ class ProdutoController extends Controller
      */
     public function store(Request $request)
     {
-        try {
+        $tentativas = 3;
+        for ($i = 0; $i < $tentativas; $i++) {
             try {
-                // Validação dos dados da requisição
-                $validatedData = $request->validate([
-                    'categoria_id' => 'required|integer|exists:categorias,id',
-                    'nome' => 'required|string|max:255|unique:produtos,nome',
-                    'preco' => 'required|numeric',
-                ], [
-                    'categoria_id.required' => 'O campo categoria_id é obrigatório.',
-                    'categoria_id.integer' => 'O campo categoria_id deve ser um inteiro.',
-                    'categoria_id.exists' => 'A categoria especificada não existe.',
-                    'nome.required' => 'O campo nome é obrigatório.',
-                    'nome.string' => 'O campo nome deve ser uma string.',
-                    'nome.max' => 'O campo nome não pode ter mais de 255 caracteres.',
-                    'nome.unique' => 'O nome do produto já existe.',
-                    'preco.required' => 'O campo preco é obrigatório.',
-                    'preco.numeric' => 'O campo preco deve ser um número.',
-                ]);
-            } catch (\Illuminate\Validation\ValidationException $e) {
-                // Resposta de erro de validação
-                $errors = collect($e->errors())->flatten()->first();
+                try {
+                    // Validação dos dados da requisição
+                    $validatedData = $request->validate([
+                        'categoria_id' => 'required|integer|exists:categorias,id',
+                        'nome' => 'required|string|max:255|unique:produtos,nome',
+                        'preco' => 'required|numeric',
+                    ], [
+                        'categoria_id.required' => 'O campo categoria_id é obrigatório.',
+                        'categoria_id.integer' => 'O campo categoria_id deve ser um inteiro.',
+                        'categoria_id.exists' => 'A categoria especificada não existe.',
+                        'nome.required' => 'O campo nome é obrigatório.',
+                        'nome.string' => 'O campo nome deve ser uma string.',
+                        'nome.max' => 'O campo nome não pode ter mais de 255 caracteres.',
+                        'nome.unique' => 'O nome do produto já existe.',
+                        'preco.required' => 'O campo preco é obrigatório.',
+                        'preco.numeric' => 'O campo preco deve ser um número.',
+                    ]);
+                } catch (\Illuminate\Validation\ValidationException $e) {
+                    // Resposta de erro de validação
+                    $errors = collect($e->errors())->flatten()->first();
+                    $response = [
+                        'sucesso' => false,
+                        'mensagem_erro' => is_array($errors) ? implode(', ', $errors) : $errors,
+                        'dados' => null,
+                    ];
+
+                    return response()->json($response, 422);
+                }
+
+                // Cria o produto
+                $produto = Produto::create($validatedData);
+                Cache::tags(['produtos'])->flush(); // Limpa o cache após criar um novo produto
+
+                // Carrega a categoria associada
+                $produto->load('categoria');
+
+                // Preparar resposta
                 $response = [
-                    'sucesso' => false,
-                    'mensagem_erro' => is_array($errors) ? implode(', ', $errors) : $errors,
-                    'dados' => null,
+                    'sucesso' => true,
+                    'mensagem_erro' => null,
+                    'dados' => [
+                        'produto' => $produto,
+                    ],
                 ];
 
-                return response()->json($response, 422);
+                event(new criarProduto($produto));
+
+                return response()->json($response, 201);
+            } catch (\Exception $e) {
+                // Log detalhado do erro
+                Log::channel('apis')->error('Erro ao criar produto', [
+                    'mensagem' => $e->getMessage(),
+                    'arquivo' => $e->getFile(),
+                    'linha' => $e->getLine(),
+                    'trace' => $e->getTraceAsString(),
+                    'tentativa' => ($i + 1),
+                ]);
+
+                // Se for a última tentativa, retornar o erro
+                if ($i === $tentativas - 1) {
+                    $response = [
+                        'sucesso' => false,
+                        'mensagem_erro' => 'Algo deu errado. Tente novamente mais tarde.',
+                        'dados' => null,
+                    ];
+
+                    return response()->json($response, 500);
+                }
             }
-
-            // Cria o produto
-            $produto = Produto::create($validatedData);
-            Cache::tags(['produtos'])->flush(); // Limpa o cache após criar um novo produto
-
-            // Carrega a categoria associada
-            $produto->load('categoria');
-
-            // Preparar resposta
-            $response = [
-                'sucesso' => true,
-                'mensagem_erro' => null,
-                'dados' => [
-                    'produto' => $produto,
-                ],
-            ];
-
-            event(new criarProduto($produto));
-
-            return response()->json($response, 201);
-        } catch (\Exception $e) {
-            // Log detalhado do erro
-            Log::channel('apis')->error('Erro ao criar produto', [
-                'mensagem' => $e->getMessage(),
-                'arquivo' => $e->getFile(),
-                'linha' => $e->getLine(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            // Resposta de erro
-            $response = [
-                'sucesso' => false,
-                'mensagem_erro' => 'Algo deu errado. Tente novamente mais tarde.',
-                'dados' => null,
-            ];
-
-            return response()->json($response, 500);
         }
     }
 
@@ -386,56 +398,62 @@ class ProdutoController extends Controller
      */
     public function show($id)
     {
-        try {
-            // Recupera o produto pelo ID com suas relações
-            $produto = Produto::with(['categoria', 'pedidos'])->find($id);
+        $tentativas = 3;
+        for ($i = 0; $i < $tentativas; $i++) {
+            try {
+                // Recupera o produto pelo ID com suas relações
+                $produto = Produto::with(['categoria', 'pedidos'])->find($id);
 
-            // Verifica se o produto foi encontrado
-            if (!$produto) {
+                // Verifica se o produto foi encontrado
+                if (!$produto) {
+                    $response = [
+                        'sucesso' => false,
+                        'mensagem_erro' => 'Produto não encontrado.',
+                        'dados' => null,
+                    ];
+
+                    return response()->json($response, 404);
+                }
+
+                // Chave do cache
+                $cacheKey = 'produto_' . $produto->id;
+
+                // Recupera o produto do cache ou do banco de dados
+                $produto = Cache::tags(['produtos'])->remember($cacheKey, 60, function () use ($produto) {
+                    return $produto;
+                });
+
+                // Preparar resposta
                 $response = [
-                    'sucesso' => false,
-                    'mensagem_erro' => 'Produto não encontrado.',
-                    'dados' => null,
+                    'sucesso' => true,
+                    'mensagem_erro' => null,
+                    'dados' => [
+                        'produto' => $produto,
+                    ],
                 ];
 
-                return response()->json($response, 404);
+                return response()->json($response, 200);
+            } catch (\Exception $e) {
+                // Log detalhado do erro
+                Log::channel('apis')->error('Erro ao exibir produto', [
+                    'mensagem' => $e->getMessage(),
+                    'arquivo' => $e->getFile(),
+                    'linha' => $e->getLine(),
+                    'trace' => $e->getTraceAsString(),
+                    'tentativa' => ($i + 1),
+                ]);
+
+                // Se for a última tentativa, retornar o erro
+                if ($i === $tentativas - 1) {
+                    $response = [
+                        'sucesso' => false,
+                        'mensagem_erro' => 'Algo deu errado. Tente novamente mais tarde.',
+                        'dados' => null,
+                    ];
+
+                    return response()->json($response, 500);
+                }
             }
-
-            // Chave do cache
-            $cacheKey = 'produto_' . $produto->id;
-
-            // Recupera o produto do cache ou do banco de dados
-            $produto = Cache::tags(['produtos'])->remember($cacheKey, 60, function () use ($produto) {
-                return $produto;
-            });
-
-            // Preparar resposta
-            $response = [
-                'sucesso' => true,
-                'mensagem_erro' => null,
-                'dados' => [
-                    'produto' => $produto,
-                ],
-            ];
-
-            return response()->json($response, 200);
-        } catch (\Exception $e) {
-            // Log detalhado do erro
-            Log::channel('apis')->error('Erro ao exibir produto', [
-                'mensagem' => $e->getMessage(),
-                'arquivo' => $e->getFile(),
-                'linha' => $e->getLine(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            // Resposta de erro
-            $response = [
-                'sucesso' => false,
-                'mensagem_erro' => 'Algo deu errado. Tente novamente mais tarde.',
-                'dados' => null,
-            ];
-
-            return response()->json($response, 500);
         }
     }
 
@@ -520,82 +538,88 @@ class ProdutoController extends Controller
      */
     public function update(Request $request, $id)
     {
-        try {
-            // Recupera o produto pelo ID
-            $produto = Produto::find($id);
-
-            // Verifica se o produto foi encontrado
-            if (!$produto) {
-                $response = [
-                    'sucesso' => false,
-                    'mensagem_erro' => 'Produto não encontrado.',
-                    'dados' => null,
-                ];
-
-                return response()->json($response, 404);
-            }
-
+        $tentativas = 3;
+        for ($i = 0; $i < $tentativas; $i++) {
             try {
-                // Validação dos dados da requisição
-                $validatedData = $request->validate([
-                    'categoria_id' => 'integer|exists:categorias,id',
-                    'nome' => 'string|max:255',
-                    'preco' => 'numeric',
-                ], [
-                    'categoria_id.integer' => 'O campo categoria_id deve ser um inteiro.',
-                    'categoria_id.exists' => 'A categoria especificada não existe.',
-                    'nome.string' => 'O campo nome deve ser uma string.',
-                    'nome.max' => 'O campo nome não pode ter mais de 255 caracteres.',
-                    'preco.numeric' => 'O campo preco deve ser um número.',
-                ]);
-            } catch (\Illuminate\Validation\ValidationException $e) {
-                // Resposta de erro de validação
-                $errors = collect($e->errors())->flatten()->first();
+                // Recupera o produto pelo ID
+                $produto = Produto::find($id);
+
+                // Verifica se o produto foi encontrado
+                if (!$produto) {
+                    $response = [
+                        'sucesso' => false,
+                        'mensagem_erro' => 'Produto não encontrado.',
+                        'dados' => null,
+                    ];
+
+                    return response()->json($response, 404);
+                }
+
+                try {
+                    // Validação dos dados da requisição
+                    $validatedData = $request->validate([
+                        'categoria_id' => 'integer|exists:categorias,id',
+                        'nome' => 'string|max:255',
+                        'preco' => 'numeric',
+                    ], [
+                        'categoria_id.integer' => 'O campo categoria_id deve ser um inteiro.',
+                        'categoria_id.exists' => 'A categoria especificada não existe.',
+                        'nome.string' => 'O campo nome deve ser uma string.',
+                        'nome.max' => 'O campo nome não pode ter mais de 255 caracteres.',
+                        'preco.numeric' => 'O campo preco deve ser um número.',
+                    ]);
+                } catch (\Illuminate\Validation\ValidationException $e) {
+                    // Resposta de erro de validação
+                    $errors = collect($e->errors())->flatten()->first();
+                    $response = [
+                        'sucesso' => false,
+                        'mensagem_erro' => is_array($errors) ? implode(', ', $errors) : $errors,
+                        'dados' => null,
+                    ];
+
+                    return response()->json($response, 422);
+                }
+
+                // Atualiza o produto
+                $produto->update($validatedData);
+
+                // Atualiza o cache do produto
+                $cacheKey = 'produto_' . $produto->id;
+                Cache::tags(['produtos'])->put($cacheKey, $produto, 60);
+
+                // Preparar resposta
                 $response = [
-                    'sucesso' => false,
-                    'mensagem_erro' => is_array($errors) ? implode(', ', $errors) : $errors,
-                    'dados' => null,
+                    'sucesso' => true,
+                    'mensagem_erro' => null,
+                    'dados' => [
+                        'produto' => $produto,
+                    ],
                 ];
 
-                return response()->json($response, 422);
+                event(new atualizarProduto($produto));
+
+                return response()->json($response, 200);
+            } catch (\Exception $e) {
+                // Log detalhado do erro
+                Log::channel('apis')->error('Erro ao atualizar produto', [
+                    'mensagem' => $e->getMessage(),
+                    'arquivo' => $e->getFile(),
+                    'linha' => $e->getLine(),
+                    'trace' => $e->getTraceAsString(),
+                    'tentativa' => ($i + 1),
+                ]);
+
+                // Se for a última tentativa, retornar o erro
+                if ($i === $tentativas - 1) {
+                    $response = [
+                        'sucesso' => false,
+                        'mensagem_erro' => 'Algo deu errado. Tente novamente mais tarde.',
+                        'dados' => null,
+                    ];
+
+                    return response()->json($response, 500);
+                }
             }
-
-            // Atualiza o produto
-            $produto->update($validatedData);
-
-            // Atualiza o cache do produto
-            $cacheKey = 'produto_' . $produto->id;
-            Cache::tags(['produtos'])->put($cacheKey, $produto, 60);
-
-            // Preparar resposta
-            $response = [
-                'sucesso' => true,
-                'mensagem_erro' => null,
-                'dados' => [
-                    'produto' => $produto,
-                ],
-            ];
-
-            event(new atualizarProduto($produto));
-
-            return response()->json($response, 200);
-        } catch (\Exception $e) {
-            // Log detalhado do erro
-            Log::channel('apis')->error('Erro ao atualizar produto', [
-                'mensagem' => $e->getMessage(),
-                'arquivo' => $e->getFile(),
-                'linha' => $e->getLine(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            // Resposta de erro
-            $response = [
-                'sucesso' => false,
-                'mensagem_erro' => 'Algo deu errado. Tente novamente mais tarde.',
-                'dados' => null,
-            ];
-
-            return response()->json($response, 500);
         }
     }
 
@@ -656,57 +680,63 @@ class ProdutoController extends Controller
      */
     public function destroy($id)
     {
-        try {
-            // Recupera o produto pelo ID
-            $produto = Produto::find($id);
+        $tentativas = 3;
+        for ($i = 0; $i < $tentativas; $i++) {
+            try {
+                // Recupera o produto pelo ID
+                $produto = Produto::find($id);
 
-            // Verifica se o produto foi encontrado
-            if (!$produto) {
-                $response = [
-                    'sucesso' => false,
-                    'mensagem_erro' => 'Produto não encontrado.',
-                    'dados' => null,
-                ];
+                // Verifica se o produto foi encontrado
+                if (!$produto) {
+                    $response = [
+                        'sucesso' => false,
+                        'mensagem_erro' => 'Produto não encontrado.',
+                        'dados' => null,
+                    ];
 
-                return response()->json($response, 404);
+                    return response()->json($response, 404);
+                }
+
+                // Verificar se o produto tem vínculos
+                if ($produto->pedidos()->exists()) {
+                    $response = [
+                        'sucesso' => false,
+                        'mensagem_erro' => 'Produto possui vínculos e não pode ser deletado.',
+                        'dados' => null,
+                    ];
+
+                    return response()->json($response, 400);
+                }
+
+                // Deleta o produto
+                $produto->delete();
+
+                // Remove o cache do produto
+                $cacheKey = 'produto_' . $produto->id;
+                Cache::tags(['produtos'])->forget($cacheKey);
+
+                return response()->json(null, 204);
+            } catch (\Exception $e) {
+                // Log detalhado do erro
+                Log::channel('apis')->error('Erro ao deletar produto', [
+                    'mensagem' => $e->getMessage(),
+                    'arquivo' => $e->getFile(),
+                    'linha' => $e->getLine(),
+                    'trace' => $e->getTraceAsString(),
+                    'tentativa' => ($i + 1),
+                ]);
+
+                // Se for a última tentativa, retornar o erro
+                if ($i === $tentativas - 1) {
+                    $response = [
+                        'sucesso' => false,
+                        'mensagem_erro' => 'Algo deu errado. Tente novamente mais tarde.',
+                        'dados' => null,
+                    ];
+
+                    return response()->json($response, 500);
+                }
             }
-
-            // Verificar se o produto tem vínculos
-            if ($produto->pedidos()->exists()) {
-                $response = [
-                    'sucesso' => false,
-                    'mensagem_erro' => 'Produto possui vínculos e não pode ser deletado.',
-                    'dados' => null,
-                ];
-
-                return response()->json($response, 400);
-            }
-
-            // Deleta o produto
-            $produto->delete();
-
-            // Remove o cache do produto
-            $cacheKey = 'produto_' . $produto->id;
-            Cache::tags(['produtos'])->forget($cacheKey);
-
-            return response()->json(null, 204);
-        } catch (\Exception $e) {
-            // Log detalhado do erro
-            Log::channel('apis')->error('Erro ao deletar produto', [
-                'mensagem' => $e->getMessage(),
-                'arquivo' => $e->getFile(),
-                'linha' => $e->getLine(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            // Resposta de erro
-            $response = [
-                'sucesso' => false,
-                'mensagem_erro' => 'Algo deu errado. Tente novamente mais tarde.',
-                'dados' => null,
-            ];
-
-            return response()->json($response, 500);
         }
     }
 }

@@ -108,64 +108,69 @@ class CategoriaController extends Controller
      */
     public function index(Request $request)
     {
-        try {
-            // Validação de parâmetros
-            $itensPorPagina = (int) $request->query('itens_por_pagina', 10);
-            $ordenarPor = $request->query('ordenar_por', 'id');
-            $ordem = $request->query('ordem', 'asc');
-            $pagina = (int) $request->query('pagina', 1);
+        $tentativas = 3;
+        for ($i = 0; $i < $tentativas; $i++) {
+            try {
+                // Validação de parâmetros
+                $itensPorPagina = (int) $request->query('itens_por_pagina', 10);
+                $ordenarPor = $request->query('ordenar_por', 'id');
+                $ordem = $request->query('ordem', 'asc');
+                $pagina = (int) $request->query('pagina', 1);
 
-            // Tempo de cache em segundos
-            $cacheTempo = 60;
+                // Tempo de cache em segundos
+                $cacheTempo = 60;
 
-            // Chave do cache
-            $cacheKey = 'categorias_' . $itensPorPagina . '_' . $ordenarPor . '_' . $ordem . '_pagina_' . $pagina;
+                // Chave do cache
+                $cacheKey = 'categorias_' . $itensPorPagina . '_' . $ordenarPor . '_' . $ordem . '_pagina_' . $pagina;
 
-            // Recupera categorias do cache ou do banco de dados
-            $categorias = Cache::tags(['categorias'])->remember($cacheKey, $cacheTempo, function () use ($itensPorPagina, $ordenarPor, $ordem, $pagina) {
-                return Categoria::with(['produtos'])->orderBy($ordenarPor, $ordem)->paginate($itensPorPagina, ['*'], 'page', $pagina);
-            });
+                // Recupera categorias do cache ou do banco de dados
+                $categorias = Cache::tags(['categorias'])->remember($cacheKey, $cacheTempo, function () use ($itensPorPagina, $ordenarPor, $ordem, $pagina) {
+                    return Categoria::with(['produtos'])->orderBy($ordenarPor, $ordem)->paginate($itensPorPagina, ['*'], 'page', $pagina);
+                });
 
-            // Preparar resposta
-            $response = [
-                'sucesso' => true,
-                'mensagem_erro' => null,
-                'dados' => [
-                    'categorias' => $categorias->items(),
-                    'ultima_pagina' => $categorias->lastPage(),
-                    'total_itens' => $categorias->total(),
-                    'filtro' => [
-                        'itens_por_pagina' => $itensPorPagina,
-                        'ordenar_por' => $ordenarPor,
-                        'ordem' => $ordem,
-                        'pagina' => $categorias->currentPage(),
+                // Preparar resposta
+                $response = [
+                    'sucesso' => true,
+                    'mensagem_erro' => null,
+                    'dados' => [
+                        'categorias' => $categorias->items(),
+                        'ultima_pagina' => $categorias->lastPage(),
+                        'total_itens' => $categorias->total(),
+                        'filtro' => [
+                            'itens_por_pagina' => $itensPorPagina,
+                            'ordenar_por' => $ordenarPor,
+                            'ordem' => $ordem,
+                            'pagina' => $categorias->currentPage(),
+                        ],
                     ],
-                ],
-            ];
+                ];
 
-            event(new listarCategoria($categorias->items()));
+                event(new listarCategoria($categorias->items()));
 
-            return response()->json($response);
-        } catch (\Exception $e) {
-            // Log detalhado do erro
-            Log::channel('apis')->error('Erro ao listar categorias', [
-                'mensagem' => $e->getMessage(),
-                'arquivo' => $e->getFile(),
-                'linha' => $e->getLine(),
-                'trace' => $e->getTraceAsString(),
-            ]);
+                return response()->json($response);
+            } catch (\Exception $e) {
+                // Log detalhado do erro
+                Log::channel('apis')->error('Erro ao listar categorias', [
+                    'mensagem' => $e->getMessage(),
+                    'arquivo' => $e->getFile(),
+                    'linha' => $e->getLine(),
+                    'trace' => $e->getTraceAsString(),
+                    'tentativa' => ($i + 1),
+                ]);
 
-            // Resposta de erro
-            $response = [
-                'sucesso' => false,
-                'mensagem_erro' => 'Algo deu errado. Tente novamente mais tarde.',
-                'dados' => null,
-            ];
+                // Se for a última tentativa, retornar o erro
+                if ($i === $tentativas - 1) {
+                    $response = [
+                        'sucesso' => false,
+                        'mensagem_erro' => 'Algo deu errado. Tente novamente mais tarde.',
+                        'dados' => null,
+                    ];
 
-            return response()->json($response, 500);
+                    return response()->json($response, 500);
+                }
+            }
         }
     }
-
     /**
      * @OA\Post(
      *     path="/categorias",
@@ -233,62 +238,68 @@ class CategoriaController extends Controller
      */
     public function store(Request $request)
     {
-        try {
-            // Validação dos dados da requisição
-            $validatedData = $request->validate([
-                'nome' => 'required|string|max:255|unique:categorias,nome',
-            ], [
-                'nome.required' => 'O campo nome é obrigatório.',
-                'nome.string' => 'O campo nome deve ser uma string.',
-                'nome.max' => 'O campo nome não pode ter mais de 255 caracteres.',
-                'nome.unique' => 'O nome da categoria já existe.',
-            ]);
+        $tentativas = 3;
+        for ($i = 0; $i < $tentativas; $i++) {
+            try {
+                // Validação dos dados da requisição
+                $validatedData = $request->validate([
+                    'nome' => 'required|string|max:255|unique:categorias,nome',
+                ], [
+                    'nome.required' => 'O campo nome é obrigatório.',
+                    'nome.string' => 'O campo nome deve ser uma string.',
+                    'nome.max' => 'O campo nome não pode ter mais de 255 caracteres.',
+                    'nome.unique' => 'O nome da categoria já existe.',
+                ]);
 
-            // Criação da nova categoria
-            $categoria = Categoria::create($validatedData);
+                // Criação da nova categoria
+                $categoria = Categoria::create($validatedData);
 
-            // Limpa o cache após criar uma nova categoria
-            Cache::tags(['categorias'])->flush();
+                // Limpa o cache após criar uma nova categoria
+                Cache::tags(['categorias'])->flush();
 
-            // Preparar resposta
-            $response = [
-                'sucesso' => true,
-                'mensagem_erro' => null,
-                'dados' => [
-                    'categoria' => $categoria,
-                ],
-            ];
+                // Preparar resposta
+                $response = [
+                    'sucesso' => true,
+                    'mensagem_erro' => null,
+                    'dados' => [
+                        'categoria' => $categoria,
+                    ],
+                ];
 
-            event(new criarCategoria($categoria));
+                event(new criarCategoria($categoria));
 
-            return response()->json($response, 201);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            // Resposta de erro de validação
-            $errors = collect($e->errors())->flatten()->first();
-            $response = [
-                'sucesso' => false,
-                'mensagem_erro' => is_array($errors) ? implode(', ', $errors) : $errors,
-                'dados' => null,
-            ];
+                return response()->json($response, 201);
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                // Resposta de erro de validação
+                $errors = collect($e->errors())->flatten()->first();
+                $response = [
+                    'sucesso' => false,
+                    'mensagem_erro' => is_array($errors) ? implode(', ', $errors) : $errors,
+                    'dados' => null,
+                ];
 
-            return response()->json($response, 422);
-        } catch (\Exception $e) {
-            // Log detalhado do erro
-            Log::channel('apis')->error('Erro ao criar categoria', [
-                'mensagem' => $e->getMessage(),
-                'arquivo' => $e->getFile(),
-                'linha' => $e->getLine(),
-                'trace' => $e->getTraceAsString(),
-            ]);
+                return response()->json($response, 422);
+            } catch (\Exception $e) {
+                // Log detalhado do erro
+                Log::channel('apis')->error('Erro ao criar categoria', [
+                    'mensagem' => $e->getMessage(),
+                    'arquivo' => $e->getFile(),
+                    'linha' => $e->getLine(),
+                    'trace' => $e->getTraceAsString(),
+                    'tentativa' => ($i + 1),
+                ]);
 
-            // Resposta de erro
-            $response = [
-                'sucesso' => false,
-                'mensagem_erro' => 'Algo deu errado. Tente novamente mais tarde.',
-                'dados' => null,
-            ];
+                // Se for a última tentativa, retornar o erro
+                if ($i === $tentativas - 1) {
+                    $response = [
+                        'sucesso' => false,
+                        'mensagem_erro' => 'Algo deu errado. Tente novamente mais tarde.',
+                        'dados' => null,
+                    ];
 
-            return response()->json($response, 500);
+                    return response()->json($response, 500);
+                }
+            }
         }
     }
 
@@ -360,56 +371,62 @@ class CategoriaController extends Controller
      */
     public function show($id)
     {
-        try {
-            // Recupera a categoria com seus produtos associados
-            $categoria = Categoria::with(['produtos'])->find($id);
+        $tentativas = 3;
+        for ($i = 0; $i < $tentativas; $i++) {
+            try {
+                // Recupera a categoria com seus produtos associados
+                $categoria = Categoria::with(['produtos'])->find($id);
 
-            // Verifica se a categoria foi encontrada
-            if (!$categoria) {
+                // Verifica se a categoria foi encontrada
+                if (!$categoria) {
+                    $response = [
+                        'sucesso' => false,
+                        'mensagem_erro' => 'Categoria não encontrada',
+                        'dados' => null,
+                    ];
+
+                    return response()->json($response, 404);
+                }
+
+                // Chave do cache
+                $cacheKey = 'categoria_' . $categoria->id;
+
+                // Recupera a categoria do cache ou do banco de dados
+                $categoria = Cache::tags(['categorias'])->remember($cacheKey, 60, function () use ($categoria) {
+                    return $categoria;
+                });
+
+                // Preparar resposta
                 $response = [
-                    'sucesso' => false,
-                    'mensagem_erro' => 'Categoria não encontrada',
-                    'dados' => null,
+                    'sucesso' => true,
+                    'mensagem_erro' => null,
+                    'dados' => [
+                        'categoria' => $categoria,
+                    ],
                 ];
 
-                return response()->json($response, 404);
+                return response()->json($response, 200);
+            } catch (\Exception $e) {
+                // Log detalhado do erro
+                Log::channel('apis')->error('Erro ao mostrar categoria', [
+                    'mensagem' => $e->getMessage(),
+                    'arquivo' => $e->getFile(),
+                    'linha' => $e->getLine(),
+                    'trace' => $e->getTraceAsString(),
+                    'tentativa' => ($i + 1),
+                ]);
+
+                // Se for a última tentativa, retornar o erro
+                if ($i === $tentativas - 1) {
+                    $response = [
+                        'sucesso' => false,
+                        'mensagem_erro' => 'Algo deu errado. Tente novamente mais tarde.',
+                        'dados' => null,
+                    ];
+
+                    return response()->json($response, 500);
+                }
             }
-
-            // Chave do cache
-            $cacheKey = 'categoria_' . $categoria->id;
-
-            // Recupera a categoria do cache ou do banco de dados
-            $categoria = Cache::tags(['categorias'])->remember($cacheKey, 60, function () use ($categoria) {
-                return $categoria;
-            });
-
-            // Preparar resposta
-            $response = [
-                'sucesso' => true,
-                'mensagem_erro' => null,
-                'dados' => [
-                    'categoria' => $categoria,
-                ],
-            ];
-
-            return response()->json($response, 200);
-        } catch (\Exception $e) {
-            // Log detalhado do erro
-            Log::channel('apis')->error('Erro ao mostrar categoria', [
-                'mensagem' => $e->getMessage(),
-                'arquivo' => $e->getFile(),
-                'linha' => $e->getLine(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            // Resposta de erro
-            $response = [
-                'sucesso' => false,
-                'mensagem_erro' => 'Algo deu errado. Tente novamente mais tarde.',
-                'dados' => null,
-            ];
-
-            return response()->json($response, 500);
         }
     }
 
@@ -503,75 +520,81 @@ class CategoriaController extends Controller
      */
     public function update(Request $request, $id)
     {
-        try {
-            // Recupera a categoria com seus produtos associados
-            $categoria = Categoria::with(['produtos'])->find($id);
+        $tentativas = 3;
+        for ($i = 0; $i < $tentativas; $i++) {
+            try {
+                // Recupera a categoria com seus produtos associados
+                $categoria = Categoria::with(['produtos'])->find($id);
 
-            // Verifica se a categoria foi encontrada
-            if (!$categoria) {
+                // Verifica se a categoria foi encontrada
+                if (!$categoria) {
+                    $response = [
+                        'sucesso' => false,
+                        'mensagem_erro' => 'Categoria não encontrada.',
+                        'dados' => null,
+                    ];
+
+                    return response()->json($response, 404);
+                }
+
+                // Validação dos dados
+                $validatedData = $request->validate([
+                    'nome' => 'string|max:255',
+                ], [
+                    'nome.string' => 'O campo nome deve ser uma string.',
+                    'nome.max' => 'O campo nome não pode ter mais de 255 caracteres.',
+                ]);
+
+                // Atualiza a categoria
+                $categoria->update($validatedData);
+
+                // Chave do cache
+                $cacheKey = 'categoria_' . $categoria->id;
+                Cache::tags(['categorias'])->put($cacheKey, $categoria, 60);
+
+                // Preparar resposta
+                $response = [
+                    'sucesso' => true,
+                    'mensagem_erro' => null,
+                    'dados' => [
+                        'categoria' => $categoria,
+                    ],
+                ];
+
+                event(new atualizarCategoria($categoria));
+
+                return response()->json($response, 200);
+            } catch (\Illuminate\Validation\ValidationException $e) {
+                // Resposta de erro de validação
+                $errors = collect($e->errors())->flatten()->first();
                 $response = [
                     'sucesso' => false,
-                    'mensagem_erro' => 'Categoria não encontrada.',
+                    'mensagem_erro' => is_array($errors) ? implode(', ', $errors) : $errors,
                     'dados' => null,
                 ];
 
-                return response()->json($response, 404);
+                return response()->json($response, 422);
+            } catch (\Exception $e) {
+                // Log detalhado do erro
+                Log::channel('apis')->error('Erro ao atualizar categoria', [
+                    'mensagem' => $e->getMessage(),
+                    'arquivo' => $e->getFile(),
+                    'linha' => $e->getLine(),
+                    'trace' => $e->getTraceAsString(),
+                    'tentativa' => ($i + 1),
+                ]);
+
+                // Se for a última tentativa, retornar o erro
+                if ($i === $tentativas - 1) {
+                    $response = [
+                        'sucesso' => false,
+                        'mensagem_erro' => 'Algo deu errado. Tente novamente mais tarde.',
+                        'dados' => null,
+                    ];
+
+                    return response()->json($response, 500);
+                }
             }
-
-            // Validação dos dados
-            $validatedData = $request->validate([
-                'nome' => 'string|max:255',
-            ], [
-                'nome.string' => 'O campo nome deve ser uma string.',
-                'nome.max' => 'O campo nome não pode ter mais de 255 caracteres.',
-            ]);
-
-            // Atualiza a categoria
-            $categoria->update($validatedData);
-
-            // Chave do cache
-            $cacheKey = 'categoria_' . $categoria->id;
-            Cache::tags(['categorias'])->put($cacheKey, $categoria, 60);
-
-            // Preparar resposta
-            $response = [
-                'sucesso' => true,
-                'mensagem_erro' => null,
-                'dados' => [
-                    'categoria' => $categoria,
-                ],
-            ];
-
-            event(new atualizarCategoria($categoria));
-
-            return response()->json($response, 200);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            // Resposta de erro de validação
-            $errors = collect($e->errors())->flatten()->first();
-            $response = [
-                'sucesso' => false,
-                'mensagem_erro' => is_array($errors) ? implode(', ', $errors) : $errors,
-                'dados' => null,
-            ];
-
-            return response()->json($response, 422);
-        } catch (\Exception $e) {
-            // Log detalhado do erro
-            Log::channel('apis')->error('Erro ao atualizar categoria', [
-                'mensagem' => $e->getMessage(),
-                'arquivo' => $e->getFile(),
-                'linha' => $e->getLine(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            // Resposta de erro
-            $response = [
-                'sucesso' => false,
-                'mensagem_erro' => 'Algo deu errado. Tente novamente mais tarde.',
-                'dados' => null,
-            ];
-
-            return response()->json($response, 500);
         }
     }
 
@@ -633,57 +656,63 @@ class CategoriaController extends Controller
      */
     public function destroy($id)
     {
-        try {
-            // Recupera a categoria pelo ID
-            $categoria = Categoria::find($id);
+        $tentativas = 3;
+        for ($i = 0; $i < $tentativas; $i++) {
+            try {
+                // Recupera a categoria pelo ID
+                $categoria = Categoria::find($id);
 
-            // Verifica se a categoria foi encontrada
-            if (!$categoria) {
-                $response = [
-                    'sucesso' => false,
-                    'mensagem_erro' => 'Categoria não encontrada.',
-                    'dados' => null,
-                ];
+                // Verifica se a categoria foi encontrada
+                if (!$categoria) {
+                    $response = [
+                        'sucesso' => false,
+                        'mensagem_erro' => 'Categoria não encontrada.',
+                        'dados' => null,
+                    ];
 
-                return response()->json($response, 404);
+                    return response()->json($response, 404);
+                }
+
+                // Verificar se a categoria tem vínculos
+                if ($categoria->produtos()->exists()) {
+                    $response = [
+                        'sucesso' => false,
+                        'mensagem_erro' => 'Categoria possui vínculos e não pode ser deletada.',
+                        'dados' => null,
+                    ];
+
+                    return response()->json($response, 400);
+                }
+
+                // Deleta a categoria
+                $categoria->delete();
+
+                // Remove a categoria do cache
+                $cacheKey = 'categoria_' . $categoria->id;
+                Cache::tags(['categorias'])->forget($cacheKey);
+
+                return response()->json(null, 204);
+            } catch (\Exception $e) {
+                // Log detalhado do erro
+                Log::channel('apis')->error('Erro ao deletar categoria', [
+                    'mensagem' => $e->getMessage(),
+                    'arquivo' => $e->getFile(),
+                    'linha' => $e->getLine(),
+                    'trace' => $e->getTraceAsString(),
+                    'tentativa' => ($i + 1),
+                ]);
+
+                // Se for a última tentativa, retornar o erro
+                if ($i === $tentativas - 1) {
+                    $response = [
+                        'sucesso' => false,
+                        'mensagem_erro' => 'Algo deu errado. Tente novamente mais tarde.',
+                        'dados' => null,
+                    ];
+
+                    return response()->json($response, 500);
+                }
             }
-
-            // Verificar se a categoria tem vínculos
-            if ($categoria->produtos()->exists()) {
-                $response = [
-                    'sucesso' => false,
-                    'mensagem_erro' => 'Categoria possui vínculos e não pode ser deletada.',
-                    'dados' => null,
-                ];
-
-                return response()->json($response, 400);
-            }
-
-            // Deleta a categoria
-            $categoria->delete();
-
-            // Remove a categoria do cache
-            $cacheKey = 'categoria_' . $categoria->id;
-            Cache::tags(['categorias'])->forget($cacheKey);
-
-            return response()->json(null, 204);
-        } catch (\Exception $e) {
-            // Log detalhado do erro
-            Log::channel('apis')->error('Erro ao deletar categoria', [
-                'mensagem' => $e->getMessage(),
-                'arquivo' => $e->getFile(),
-                'linha' => $e->getLine(),
-                'trace' => $e->getTraceAsString(),
-            ]);
-
-            // Resposta de erro
-            $response = [
-                'sucesso' => false,
-                'mensagem_erro' => 'Algo deu errado. Tente novamente mais tarde.',
-                'dados' => null,
-            ];
-
-            return response()->json($response, 500);
         }
     }
 }
